@@ -21,10 +21,14 @@ namespace LanguageTeacher.ConsoleApp
             {
                 Console.Clear();
 
-                if (studyService.IsComplete())
-                    ConsoleASCII.WriteVocabularTable(vocabService.GetAll());
+                if (studyService.HasOpenSession())
+                {
+                    ConsoleASCII.WriteQuestionTable(studyService.GetQuestions());
+                }
                 else
-                    ConsoleASCII.WriteQuestionTable(studyService.GetAll());
+                {
+                    ConsoleASCII.WriteVocabularTable(vocabService.GetAll());
+                }
 
                 Console.Write("> ");
 

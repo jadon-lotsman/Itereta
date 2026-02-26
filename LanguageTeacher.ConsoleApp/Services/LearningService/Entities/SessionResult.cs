@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using LanguageTeacher.ConsoleApp.Interfaces;
-using static System.Collections.Specialized.BitVector32;
+using LanguageTeacher.DataAccess.Data.Entities;
 
 namespace LanguageTeacher.ConsoleApp.Services.StudyService.Entities
 {
@@ -20,14 +20,25 @@ namespace LanguageTeacher.ConsoleApp.Services.StudyService.Entities
 
             foreach (var question in session.Questions)
             {
-                var entry = service.GetById(question.EntryId);
-                string[] transcriptions = entry.Translations.ToArray();
+                int entryId = question.EntryId;
+                var originaEntry = service.GetById(entryId);
 
-                if (transcriptions.Contains(question.UserAnswer))
+                if (IsCorrectQuestion(question, originaEntry))
                 {
                     CorrectAnswersCount++;
                 }
             }
+        }
+
+
+        private bool IsCorrectQuestion(Question question, VerbalEntry entry)
+        {
+            string[] entryTranslations = entry.Translations.ToArray();
+
+            if (entryTranslations.Contains(question.UserAnswer))
+                return true;
+
+            return false;
         }
 
         public override string ToString()

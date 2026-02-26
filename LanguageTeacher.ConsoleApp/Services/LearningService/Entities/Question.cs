@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace LanguageTeacher.ConsoleApp.Services.StudyService.Entities
 {
-    public class VerbalQuestion
+    public class Question
     {
         public int EntryId { get; }
         public string Foreign { get; }
         public string UserAnswer { get; set; }
 
 
-        public VerbalQuestion(int verbalId, string foreign)
+        public Question(int verbalId, string foreign)
         {
             EntryId = verbalId;
             Foreign = foreign;

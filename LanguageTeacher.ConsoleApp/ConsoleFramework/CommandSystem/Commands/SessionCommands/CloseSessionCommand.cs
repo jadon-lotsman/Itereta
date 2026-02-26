@@ -8,7 +8,7 @@ using LanguageTeacher.ConsoleApp.Services.StudyService;
 
 namespace LanguageTeacher.ConsoleApp.ConsoleFramework.CommandSystem.Commands.SessionCommands
 {
-    public class StopSessionCommand : CommandBase
+    public class CloseSessionCommand : CommandBase
     {
         protected override int ExpectedArgsCount => 0;
         protected override bool HasLimitlessArgs => false;
@@ -16,7 +16,7 @@ namespace LanguageTeacher.ConsoleApp.ConsoleFramework.CommandSystem.Commands.Ses
         private readonly ILearningService _service;
 
 
-        public StopSessionCommand(ILearningService service)
+        public CloseSessionCommand(ILearningService service)
         {
             _service = service;
         }
@@ -24,7 +24,7 @@ namespace LanguageTeacher.ConsoleApp.ConsoleFramework.CommandSystem.Commands.Ses
 
         protected override void ExecuteInternal(string[] args)
         {
-            var result = _service.StopSession();
+            var result = _service.CloseSession();
 
             Console.WriteLine(result);
             Console.ReadLine();

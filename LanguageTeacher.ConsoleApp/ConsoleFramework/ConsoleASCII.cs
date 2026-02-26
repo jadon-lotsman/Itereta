@@ -22,12 +22,12 @@ namespace LanguageTeacher.ConsoleApp.ConsoleFramework
             WriteTableFooter();
         }
 
-        public static void WriteQuestionTable(ICollection<VerbalQuestion> questions)
+        public static void WriteQuestionTable(ICollection<Question> questions)
         {
             WriteTableHeader();
 
             foreach (var quest in questions)
-                Console.WriteLine($"│ {quest.Foreign,-10} │ {quest.UserAnswer}");
+                Console.WriteLine($"│ {quest.Foreign,-20} │ {quest.UserAnswer}");
 
             WriteTableFooter();
         }

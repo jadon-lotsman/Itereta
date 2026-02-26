@@ -9,13 +9,12 @@ namespace LanguageTeacher.ConsoleApp.Services.StudyService.Entities
 {
     public class LearningSession
     {
-        public VerbalQuestion[] Questions { get; }
-        public bool IsEnd = false;
+        public Question[] Questions { get; }
 
         private int _currentQuestion;
 
 
-        public LearningSession(VerbalQuestion[] questions)
+        public LearningSession(Question[] questions)
         {
             Questions = questions;
             _currentQuestion = 0;
@@ -28,9 +27,8 @@ namespace LanguageTeacher.ConsoleApp.Services.StudyService.Entities
             _currentQuestion++;
         }
 
-        public SessionResult StopAndGetResult(IVocabularService service)
+        public SessionResult CloseAndGetResult(IVocabularService service)
         {
-            IsEnd = true;
             return new SessionResult(this, service);
         }
     }

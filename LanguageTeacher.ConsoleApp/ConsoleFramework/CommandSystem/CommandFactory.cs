@@ -20,9 +20,9 @@ namespace LanguageTeacher.ConsoleApp.ConsoleFramework.CommandSystem
                 "example" =>  new AddEntryExampleCommand(_vocabService),
                 "pronun" => new AddEntryTranscriptionCommand(_vocabService),
                 "remove" => new RemoveEntryCommand(_vocabService),
-                "session" => new StartSessionCommand(_studyService),
+                "session" => new OpenSessionCommand(_studyService),
                 "answer" => new SendAnswerCommand(_studyService),
-                "result" => new StopSessionCommand(_studyService),
+                "result" => new CloseSessionCommand(_studyService),
                 _ => throw new ArgumentException($"Unknown command with name '{command}'")
             };
         }

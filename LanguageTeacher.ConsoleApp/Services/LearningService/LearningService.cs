@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using LanguageTeacher.ConsoleApp.Interfaces;
+using LanguageTeacher.ConsoleApp.Services.LearningService.Strategies;
 using LanguageTeacher.ConsoleApp.Services.StudyService.Entities;
 using LanguageTeacher.DataAccess.Data.Entities;
 
@@ -12,54 +13,53 @@ namespace LanguageTeacher.ConsoleApp.Services.StudyService
     public class LearningService : ILearningService
     {
         private IVocabularService _vocabularService;
-        private LearningSession session;
+        private LearningSession? _session;
+
 
         public LearningService(IVocabularService vocabularService)
         {
             _vocabularService = vocabularService;
         }
 
-        public bool IsComplete()
-        {
-            if (session == null)
-                return true;
 
-            return session.IsEnd;
+        public bool HasOpenSession()
+        {
+            return _session != null;
         }
 
-        public ICollection<VerbalQuestion> GetAll()
+        public ICollection<Question> GetQuestions()
         {
-            return session.Questions;
+            if (_session == null)
+                throw new ArgumentException("Learning session is null.");
+
+            return _session.Questions;
         }
 
-        public void StartSession()
+        public void OpenSession(IQuestionStrategy strategy)
         {
-            session = new LearningSession(new QuestionGenerator().Generate(_vocabularService.GetAll()));
+            var entries = _vocabularService.GetAll();
+            var questions = strategy.GetArray(entries);
+
+            _session = new LearningSession(questions);
         }
 
-        public SessionResult StopSession()
+        public SessionResult CloseSession()
         {
-            return session.StopAndGetResult(_vocabularService);
+            if (_session == null)
+                throw new ArgumentException("An session to close is not found.");
+
+            SessionResult result = _session.CloseAndGetResult(_vocabularService);
+            _session = null;
+
+            return result;
         }
 
-        public void GetAnswer(string answer)
+        public void SendAnswer(string answer)
         {
-            session.NextQuestion(answer);
-        }
-    }
+            if (_session == null)
+                throw new ArgumentException("Learning session is null.");
 
-    public class QuestionGenerator
-    {
-        public VerbalQuestion[] Generate(ICollection<VerbalEntry> verbals)
-        {
-            List<VerbalQuestion> parts = new List<VerbalQuestion>();
-
-            foreach (VerbalEntry verbal in verbals)
-            {
-                parts.Add(new VerbalQuestion(verbal.Id, verbal.Foreign));
-            }
-
-            return parts.ToArray();
+            _session.NextQuestion(answer);
         }
     }
 }
