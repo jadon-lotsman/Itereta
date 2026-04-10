@@ -34,10 +34,12 @@ namespace Itero.API.Services
 
         public async Task<List<VocabularyEntry>> GetUserRandomEntriesAsync(int userId, int count=5)
         {
-            return await GetEntriesByUserQuery(userId)
+            var entries = await GetAllEntriesAsync(userId);
+
+            return entries
                 .OrderBy(x => Guid.NewGuid())
                 .Take(count)
-                .ToListAsync();
+                .ToList();
         }
 
 
@@ -54,15 +56,15 @@ namespace Itero.API.Services
         }
 
 
-        public async Task<VocabularyEntry?> CreateEntryAsync(int userId, VocabularyEntryDTO createDTO)
+        public async Task<VocabularyEntry?> CreateEntryAsync(int userId, VocabularyEntryDto createDTO)
         {
-            var user = _userService.GetById(userId);
+            var user = await _userService.GetByIdAsync(userId);
 
             if (user == null)
                 return null;
 
 
-            var mapper = new VocabularyEntryMapper(user);
+            var mapper = new VocabularyEntryMapper();
             string key = mapper.PrepareForeign(createDTO.Foreign);
 
             var currentEntry = await GetEntryByKeyAsync(userId, key);
@@ -71,7 +73,7 @@ namespace Itero.API.Services
                 return null;
 
 
-            var entry = mapper.Map(createDTO);
+            var entry = mapper.GetEntry(createDTO, user);
 
             await _context.Entries.AddAsync(entry);
             await _context.SaveChangesAsync();
@@ -79,7 +81,7 @@ namespace Itero.API.Services
             return entry;
         }
 
-        public async Task<VocabularyEntry?> PatchEntryAsync(int userId, int entryId, VocabularyPatchDTO patchDTO)
+        public async Task<VocabularyEntry?> PatchEntryAsync(int userId, int entryId, VocabularyPatchDto patchDTO)
         {
             var currentEntry = await GetEntryByIdAsync(userId, entryId);
 
@@ -87,14 +89,14 @@ namespace Itero.API.Services
                 return null;
 
 
-            var user = _userService.GetById(userId);
+            var user = await _userService.GetByIdAsync(userId);
 
             if (user == null)
                 return null;
 
 
-            var mapper = new VocabularyEntryMapper(user);
-            currentEntry = mapper.MapPatched(patchDTO, currentEntry);
+            var mapper = new VocabularyEntryMapper();
+            currentEntry = mapper.GetPatched(currentEntry, patchDTO);
 
             await _context.SaveChangesAsync();
 

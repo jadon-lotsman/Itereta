@@ -1,81 +1,83 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Itero.API.Data.Entities;
+﻿using Itero.API.Data.Entities;
 using Itero.API.Dtos;
 
 namespace Itero.API.Data
 {
     public class VocabularyEntryMapper
     {
-        public VocabularyEntryMapper(User user)
+        public VocabularyEntry GetEntry(VocabularyEntryDto entryDto, User user)
         {
-            _entry = new VocabularyEntry();
-            _entry.User = user;
+            string foreign = PrepareForeign(entryDto.Foreign);
+            string trascritpion = PrepareTranscription(entryDto.Transcription);
+            var examples = PrepareExamples(entryDto.Examples);
+            var translations = PrepareTranslations(entryDto.Translations);
+
+
+            var resultEntry = new VocabularyEntry();
+            resultEntry.User = user;
+
+            resultEntry.Foreign = foreign;
+            resultEntry.Transcription = trascritpion;
+            resultEntry.Examples = examples;
+            resultEntry.Translations = translations;
+
+            return resultEntry;
         }
 
-        private VocabularyEntry _entry;
-
-
-        public VocabularyEntry Map(VocabularyEntryDTO entryDTO)
+        public VocabularyEntryDto GetDto(VocabularyEntry entry)
         {
-            string foreign = PrepareForeign(entryDTO.Foreign);
-            string trascritpion = PrepareTranscription(entryDTO.Transcription);
-            var examples = PrepareExamples(entryDTO.Examples);
-            var translations = PrepareTranslations(entryDTO.Translations);
+            string foreign = PrepareForeign(entry.Foreign);
+            string trascritpion = PrepareTranscription(entry.Transcription);
+            var examples = PrepareExamples(entry.Examples.ToArray());
+            var translations = PrepareTranslations(entry.Translations.ToArray());
 
 
-            _entry.Foreign = foreign;
-            _entry.Transcription = trascritpion;
-            _entry.Examples = examples;
-            _entry.Translations = translations;
+            var entryDto = new VocabularyEntryDto();
 
-            return _entry;
+            entryDto.Foreign = foreign;
+            entryDto.Transcription = trascritpion;
+            entryDto.Examples = examples.ToArray();
+            entryDto.Translations = translations.ToArray();
+
+            return entryDto;
         }
 
-        public VocabularyEntry MapPatched(VocabularyPatchDTO patchDTO, VocabularyEntry based)
+        public VocabularyEntry GetPatched(VocabularyEntry baseEntry, VocabularyPatchDto patchDto)
         {
-            _entry = based;
+            var entry = baseEntry;
 
             // Foreign patch
-            if (patchDTO.Foreign != null)
-                _entry.Foreign = PrepareForeign(patchDTO.Foreign);
-
+            if (patchDto.Foreign != null)
+                entry.Foreign = PrepareForeign(patchDto.Foreign);
 
             // Transcription patch
-            if (patchDTO.Transcription != null)
-                _entry.Transcription = PrepareTranscription(patchDTO.Transcription);
-
+            if (patchDto.Transcription != null)
+                entry.Transcription = PrepareTranscription(patchDto.Transcription);
 
             // Examples add
-            if (patchDTO.ExamplesAdd != null)
-                _entry.Examples.AddRange(PrepareExamples(patchDTO.ExamplesAdd));
-
+            if (patchDto.ExamplesAdd != null)
+                entry.Examples.AddRange(PrepareExamples(patchDto.ExamplesAdd));
 
             // Examples remove
-            if (patchDTO.ExamplesRemove != null)
+            if (patchDto.ExamplesRemove != null)
             {
-                var examplesToRemove = new HashSet<string>(PrepareExamples(patchDTO.ExamplesRemove));
-                _entry.Examples.RemoveAll(examplesToRemove.Contains);
+                var examplesToRemove = new HashSet<string>(PrepareExamples(patchDto.ExamplesRemove));
+                entry.Examples.RemoveAll(examplesToRemove.Contains);
             }
-
 
             // Translations add
-            if (patchDTO.TranslationsAdd != null)
-                _entry.Translations.AddRange(PrepareTranslations(patchDTO.TranslationsAdd));
-
+            if (patchDto.TranslationsAdd != null)
+                entry.Translations.AddRange(PrepareTranslations(patchDto.TranslationsAdd));
 
             // Translations remove
-            if (patchDTO.TranslationsRemove != null)
+            if (patchDto.TranslationsRemove != null)
             {
-                var translationsToRemove = new HashSet<string>(PrepareTranslations(patchDTO.TranslationsRemove));
-                _entry.Translations.RemoveAll(translationsToRemove.Contains);
+                var translationsToRemove = new HashSet<string>(PrepareTranslations(patchDto.TranslationsRemove));
+                entry.Translations.RemoveAll(translationsToRemove.Contains);
             }
 
 
-            return _entry;
+            return entry;
         }
 
 

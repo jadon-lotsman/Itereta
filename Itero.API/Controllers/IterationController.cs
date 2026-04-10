@@ -31,15 +31,12 @@ namespace Itero.API.Controllers
             return Ok(iteration);
         }
 
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetIterationStepById(int stepId)
+        [HttpGet("iterettes")]
+        public async Task<IActionResult> GetAllIterettes()
         {
-            var step = await _iterationService.GetIterationStepByIdASync(UserId, stepId);
+            var steps = await _iterationService.GetAllIterettesAsync(UserId);
 
-            if (step == null)
-                return NotFound();
-
-            return Ok(step);
+            return Ok(steps);
         }
 
         [HttpPost]
@@ -53,10 +50,10 @@ namespace Itero.API.Controllers
             return Ok(result);
         }
 
-        [HttpPost("setStep")]
-        public async Task<IActionResult> SetIterationStepValue(int stepId, string userValue)
+        [HttpPut("answer/{id:int}")]
+        public async Task<IActionResult> SetIteretteAnswer(int id, string answer)
         {
-            var success = await _iterationService.SetStepValueAsync(UserId, stepId, userValue);
+            var success = await _iterationService.SetIteretteAnswerAsync(UserId, id, answer);
 
             if (!success)
                 return NotFound();
@@ -64,10 +61,10 @@ namespace Itero.API.Controllers
             return Ok();
         }
 
-        [HttpPost("result")]
-        public async Task<IActionResult> ResultIteration()
+        [HttpPost("finish")]
+        public async Task<IActionResult> FinishIteration()
         {
-            
+            await _iterationService.FinishIterationAsync(UserId);
 
             return Ok();
         }

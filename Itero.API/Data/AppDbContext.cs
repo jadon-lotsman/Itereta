@@ -13,7 +13,7 @@ namespace Itero.API.Data
         public DbSet<User> Users { get; set; }
         public DbSet<VocabularyEntry> Entries { get; set; }
         public DbSet<Iteration> Iterations { get; set; }
-        public DbSet<IterationStep> Questions { get; set; }
+        public DbSet<Iterette> Iterettes { get; set; }
         
 
         public AppDbContext(DbContextOptions<AppDbContext> options)

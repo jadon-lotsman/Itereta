@@ -9,25 +9,23 @@ namespace Itero.API.Data.Entities
     public class Iteration
     {
         public int Id { get; set; }
-        public bool InProcess { get; set; }
-        public List<IterationStep>? Questions { get; set; }
+
         public DateTime Created { get; set; }
 
 
         public int UserId { get; set; }
         public User User { get; set; }
+        public List<Iterette>? Iterettes { get; set; }
 
 
         public Iteration() { }
 
-        public Iteration(User user, List<IterationStep> questions)
+        public Iteration(User user, List<Iterette> iterettes)
         {
-            InProcess = true;
-
-            Questions = questions;
-            User = user;
-
             Created = DateTime.UtcNow;
+            UserId = user.Id;
+            User = user;
+            Iterettes = iterettes;
         }
     }
 }

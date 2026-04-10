@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Itero.API.Data;
 using Itero.API.Data.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Itero.API.Services
 {
@@ -19,21 +20,21 @@ namespace Itero.API.Services
         }
 
 
-        public User? GetById(int userId)
+        public async Task<User?> GetByIdAsync(int userId)
         {
-            return _context.Users.FirstOrDefault(u => u.Id == userId);
+            return await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
         }
 
-        public User? GetByUsername(string username)
+        public async Task<User?> GetByUsernameAsync(string username)
         {
-            return _context.Users.FirstOrDefault(u => u.Username == username);
+            return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
         }
 
-        public void Create(string username)
+        public async void CreateAsync(string username)
         {
-            _context.Users.Add(new User(username));
+            await _context.Users.AddAsync(new User(username));
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
     }
 }

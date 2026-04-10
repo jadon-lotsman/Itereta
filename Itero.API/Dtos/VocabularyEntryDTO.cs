@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Itero.API.Dtos
 {
-    public class VocabularyEntryDTO
+    public class VocabularyEntryDto
     {
         public string Foreign { get; set; }
         public string Transcription { get; set; }

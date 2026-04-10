@@ -53,7 +53,7 @@ namespace Itero.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateEntry(VocabularyEntryDTO dto)
+        public async Task<IActionResult> CreateEntry(VocabularyEntryDto dto)
         {
             var result = await _vocabularyService.CreateEntryAsync(UserId, dto);
 
@@ -63,8 +63,8 @@ namespace Itero.API.Controllers
             return Ok(result);
         }
 
-        [HttpPut]
-        public async Task<IActionResult> UpdateEntry(int id, VocabularyPatchDTO dto)
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateEntry(int id, VocabularyPatchDto dto)
         {
             var result = await _vocabularyService.PatchEntryAsync(UserId, id, dto);
 
@@ -74,7 +74,7 @@ namespace Itero.API.Controllers
             return Ok(result);
         }
 
-        [HttpDelete]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteEntry(int id)
         {
             var success = await _vocabularyService.RemoveEntryById(UserId, id);

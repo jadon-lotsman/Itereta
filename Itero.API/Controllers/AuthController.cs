@@ -23,9 +23,9 @@ namespace Itero.API.Controllers
 
 
         [HttpPost("login")]
-        public IActionResult Login(string username)
+        public async Task<IActionResult> Login(string username)
         {
-            User? user = _userService.GetByUsername(username);
+            User? user = await _userService.GetByUsernameAsync(username);
 
             if (user == null)
                 return Unauthorized();
@@ -36,14 +36,14 @@ namespace Itero.API.Controllers
 
 
         [HttpPost("register")]
-        public IActionResult Register(string username)
+        public async Task<IActionResult> Register(string username)
         {
-            User? user = _userService.GetByUsername(username);
+            User? user = await _userService.GetByUsernameAsync(username);
 
             if (user != null)
                 return BadRequest();
 
-            _userService.Create(username);
+            _userService.CreateAsync(username);
             return Ok();
         }
 
