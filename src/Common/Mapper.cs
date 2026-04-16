@@ -1,7 +1,7 @@
 ﻿using System.Formats.Tar;
 using System.Reflection;
-using Itereta;
-using Itereta.Common.Dtos;
+using Itereta.Contracts.Dtos.Iteration;
+using Itereta.Contracts.Dtos.Vocabulary;
 using Itereta.Data.Entities;
 using Microsoft.IdentityModel.Tokens;
 

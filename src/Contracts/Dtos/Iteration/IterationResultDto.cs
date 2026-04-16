@@ -1,6 +1,7 @@
-﻿using Itereta.Data.Entities;
+﻿using Itereta.Contracts.Dtos.Vocabulary;
+using Itereta.Data.Entities;
 
-namespace Itereta.Common.Dtos
+namespace Itereta.Contracts.Dtos.Iteration
 {
     public class IterationResultDto
     {

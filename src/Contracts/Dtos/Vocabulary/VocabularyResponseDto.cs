@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Itereta.Common.Dtos
+namespace Itereta.Contracts.Dtos.Vocabulary
 {
     public class VocabularyResponseDto
     {

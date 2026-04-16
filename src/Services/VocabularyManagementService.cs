@@ -2,23 +2,23 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Itereta.Common;
-using Itereta.Common.Dtos;
+using Itereta.Contracts.Dtos.Vocabulary;
 using Itereta.Data;
 using Itereta.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Itereta.Services
 {
-    public class VocabularyService
+    public class VocabularyManagementService
     {
         private AppDbContext _context;
-        private UserService _userService;
+        private AccountService _accountService;
 
 
-        public VocabularyService(AppDbContext context, UserService userService)
+        public VocabularyManagementService(AppDbContext context, AccountService userService)
         {
             _context = context;
-            _userService = userService;
+            _accountService = userService;
         }
 
 
@@ -27,17 +27,31 @@ namespace Itereta.Services
             return _context.Entries.Where(e => e.User.Id == userId);
         }
 
+        public async Task<VocabularyEntry?> GetEntryByIdAsync(int userId, int id)
+        {
+            return await GetEntriesByUserQuery(userId)
+                .FirstOrDefaultAsync(e => e.Id == id);
+        }
+
+        public async Task<VocabularyEntry?> GetEntryByKeyAsync(int userId, string key)
+        {
+            return await GetEntriesByUserQuery(userId)
+                .FirstOrDefaultAsync(e => string.Equals(e.Foreign, key));
+        }
+
         public async Task<List<VocabularyEntry>> GetAllEntriesAsync(int userId)
         {
             return await GetEntriesByUserQuery(userId)
                 .ToListAsync();
         }
 
-        public async Task<VocabularyEntry?> GetEntryByIdAsync(int userId, int id)
+        public async Task<List<VocabularyEntry>> GetAllEntriesWithoutStateAsync(int userId)
         {
             return await GetEntriesByUserQuery(userId)
-                .FirstOrDefaultAsync(e => e.Id == id);
+                .Where(e => e.RepetitionState == null)
+                .ToListAsync();
         }
+
         public async Task<Dictionary<int, VocabularyEntry>> GetEntriesDictByIdsAsync(int userId, IEnumerable<int> ids)
         {
             var list = await GetEntriesByUserQuery(userId)
@@ -47,15 +61,21 @@ namespace Itereta.Services
             return list.ToDictionary(e => e.Id);
         }
 
-        public async Task<VocabularyEntry?> GetEntryByKeyAsync(int userId, string key)
-        {
-            return await GetEntriesByUserQuery(userId)
-                .FirstOrDefaultAsync(e => e.Foreign == key.ToLowerInvariant());
-        }
 
-        public List<VocabularyEntry> GetUserRandomEntries(int userId, int count=5)
+        public List<VocabularyEntry> GetListOfRandomEntries(int userId, int count=5)
         {
             return _context.Entries.Where(e => e.User.Id == userId)
+                .AsEnumerable()
+                .OrderBy(x => Guid.NewGuid())
+                .Take(count)
+                .ToList();
+        }
+
+        public List<VocabularyEntry> GetListOfDueEntries(int userId, int count=5)
+        {
+            return _context.Entries.Where(e => e.User.Id == userId)
+                .Include(e => e.RepetitionState)
+                .Where(e => e.RepetitionState.NextIterationAt <= DateTime.UtcNow)
                 .AsEnumerable()
                 .OrderBy(x => Guid.NewGuid())
                 .Take(count)
@@ -69,7 +89,7 @@ namespace Itereta.Services
                 return RequestResult<VocabularyEntry>.Failure("INVALID_DATA");
 
 
-            var user = await _userService.GetByIdAsync(userId);
+            var user = await _accountService.GetByIdAsync(userId);
 
             if (user == null)
                 return RequestResult<VocabularyEntry>.Failure("USER_NOT_FOUND");

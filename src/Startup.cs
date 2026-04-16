@@ -77,9 +77,9 @@ namespace Itereta
             services.AddAuthentication();
             services.AddAuthorization();
 
-            services.AddScoped<VocabularyService>();
-            services.AddScoped<IterationService>();
-            services.AddScoped<UserService>();
+            services.AddScoped<AccountService>();
+            services.AddScoped<VocabularyManagementService>();
+            services.AddScoped<VocabularyIterationService>();
 
             services.AddControllers();
         }

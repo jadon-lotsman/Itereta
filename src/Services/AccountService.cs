@@ -10,12 +10,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Itereta.Services
 {
-    public class UserService
+    public class AccountService
     {
         private AppDbContext _context;
 
 
-        public UserService(AppDbContext context)
+        public AccountService(AppDbContext context)
         {
             _context = context;
         }
@@ -44,7 +44,7 @@ namespace Itereta.Services
             var user = new User
             {
                 Username = username,
-                Registered = DateTime.UtcNow
+                RegisteredAt = DateTime.UtcNow
             };
 
             await _context.Users.AddAsync(user);

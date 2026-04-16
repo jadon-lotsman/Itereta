@@ -10,16 +10,16 @@ namespace Itereta.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    public class AccountController : ControllerBase
     {
-        public AuthController(IConfiguration configuration, UserService userService)
+        public AccountController(IConfiguration configuration, AccountService userService)
         {
             _configuration = configuration;
             _userService = userService;
         }
 
         private readonly IConfiguration _configuration;
-        private readonly UserService _userService;
+        private readonly AccountService _userService;
 
 
         [HttpPost("login")]

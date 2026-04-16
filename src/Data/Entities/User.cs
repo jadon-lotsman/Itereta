@@ -11,11 +11,12 @@ namespace Itereta.Data.Entities
         public int Id { get; set; }
 
         public string Username { get; set; }
-        public DateTime Registered { get; set; }
+        public DateTime RegisteredAt { get; set; }
 
 
         public Iteration? Iteration { get; set; }
         public List<VocabularyEntry> Entries { get; set; }
+        public List<RepetitionState> RepetitionStates { get; set; }
 
 
         public User() {}
@@ -23,8 +24,10 @@ namespace Itereta.Data.Entities
         public User(string username)
         {
             Username = username;
-            Registered = DateTime.UtcNow;
+            RegisteredAt = DateTime.UtcNow;
+
             Entries = new List<VocabularyEntry>();
+            RepetitionStates = new List<RepetitionState>();
         }
     }
 }

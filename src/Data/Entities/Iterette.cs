@@ -14,7 +14,8 @@ namespace Itereta.Data.Entities
         public string Prompt { get; set; }
         public string UserAnswer { get; set; }
         public bool IsForwardQuestion { get; set; }
-
+        public int ActionCounter { get; set; }
+        public TimeSpan ActionTimeSpan { get; set; }
 
         public int IterationId { get; set; }
         public Iteration Iteration { get; set; }
@@ -25,6 +26,7 @@ namespace Itereta.Data.Entities
         public Iterette(VocabularyEntry entry, bool isForwardQuestion)
         {
             BaseVocabularyEntryId = entry.Id;
+
             Prompt = isForwardQuestion ? entry.Foreign : entry.Translations[0];
             UserAnswer = string.Empty;
             IsForwardQuestion = isForwardQuestion;

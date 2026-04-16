@@ -10,9 +10,10 @@ namespace Itereta.Data.Entities
     {
         public int Id { get; set; }
 
-        public DateTime Started { get; set; }
-        public DateTime? Finished { get; set; }
-        public bool WasFinished => Finished.HasValue;
+        public DateTime StartedAt { get; set; }
+        public DateTime LastActionAt { get; set; }
+        public DateTime? FinishedAt { get; set; }
+        public bool WasFinished => FinishedAt.HasValue;
 
 
         public int UserId { get; set; }
@@ -24,9 +25,10 @@ namespace Itereta.Data.Entities
 
         public Iteration(User user, List<Iterette> iterettes)
         {
-            Started = DateTime.UtcNow;
-            Finished = null;
-            UserId = user.Id;
+            StartedAt = DateTime.UtcNow;
+            LastActionAt = StartedAt;
+            FinishedAt = null;
+
             User = user;
             Iterettes = iterettes;
         }

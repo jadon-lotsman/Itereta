@@ -1,4 +1,4 @@
-﻿namespace Itereta.Common.Dtos
+﻿namespace Itereta.Contracts.Dtos.Iteration
 {
     public class IteretteResponseDto
     {

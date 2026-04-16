@@ -14,13 +14,13 @@ namespace Itereta.Controllers
     [Route("api/[controller]")]
     public class IterationController : ControllerBase
     {
-        public IterationController(IterationService service)
+        public IterationController(VocabularyIterationService service)
         {
             _iterationService = service;
         }
 
         private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-        private readonly IterationService _iterationService;
+        private readonly VocabularyIterationService _iterationService;
 
 
         [HttpGet]
@@ -34,9 +34,9 @@ namespace Itereta.Controllers
         [HttpGet("iterettes")]
         public async Task<IActionResult> GetAllIterettes()
         {
-            var iterettes = await _iterationService.GetAllIterettesAsync(UserId);
+            var iteration = await _iterationService.GetIterationAsync(UserId);
 
-            var iterettesDto = Mapper.MapToDto(iterettes);
+            var iterettesDto = Mapper.MapToDto(iteration != null ? iteration.Iterettes : new List<Iterette>());
             return Ok(iterettesDto);
         }
 
@@ -44,16 +44,23 @@ namespace Itereta.Controllers
         [HttpPost]
         public async Task<IActionResult> StartIteration()
         {
-            var result = await _iterationService.StartIterationAsync(UserId);
-
-            if (!result.IsSuccess)
+            try
             {
-                return result.ErrorCode switch
+                var result = await _iterationService.StartIterationAsync(UserId);
+
+                if (!result.IsSuccess)
                 {
-                    "USER_NOT_FOUND" => NotFound(result.ErrorCode),
-                    "ITERATION_NOT_FINISHED" => Conflict(result.ErrorCode),
-                    _ => StatusCode(500, result.ErrorCode)
-                };
+                    return result.ErrorCode switch
+                    {
+                        "USER_NOT_FOUND" => NotFound(result.ErrorCode),
+                        "ITERATION_NOT_FINISHED" => Conflict(result.ErrorCode),
+                        _ => StatusCode(500, result.ErrorCode)
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("\n\n========\n\n" + ex.InnerException + "\n\n========\n\n" + ex.Message);
             }
 
             return Ok();

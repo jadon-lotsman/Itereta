@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Itereta.Services;
 using Itereta.Common;
-using Itereta.Common.Dtos;
+using Itereta.Contracts.Dtos.Vocabulary;
 
 namespace Itereta.Controllers
 {
@@ -14,13 +14,13 @@ namespace Itereta.Controllers
     [Route("api/[controller]")]
     public class VocabularyController : ControllerBase
     {
-        public VocabularyController(VocabularyService service)
+        public VocabularyController(VocabularyManagementService service)
         {
             _vocabularyService = service;
         }
 
         private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-        private readonly VocabularyService _vocabularyService;
+        private readonly VocabularyManagementService _vocabularyService;
 
 
         [HttpGet]
