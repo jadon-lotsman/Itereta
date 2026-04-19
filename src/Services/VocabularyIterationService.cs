@@ -194,7 +194,7 @@ namespace Itereta.Services
             state.CanSelfAssess    = false;
 
             (int interval, double easinessFactor)
-                = SM2Helper.GetNextState(state.EasinessFactor, state.IterationInterval, state.IterationCounter, quality);
+                = SM2Helper.NextIntervalAndEf(state.EasinessFactor, state.IterationInterval, state.IterationCounter, quality);
 
             state.IterationInterval = interval;
             state.EasinessFactor    = easinessFactor;
@@ -220,7 +220,7 @@ namespace Itereta.Services
             state.LastIterationAt   = DateTime.UtcNow;
 
             (int interval, double easinessFactor) 
-                = SM2Helper.GetNextState(state.EasinessFactor, state.IterationInterval, state.IterationCounter, quality);
+                = SM2Helper.NextIntervalAndEf(state.EasinessFactor, state.IterationInterval, state.IterationCounter, quality);
 
             state.IterationInterval = interval;
             state.EasinessFactor    = easinessFactor;

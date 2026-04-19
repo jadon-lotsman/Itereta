@@ -5,10 +5,11 @@ namespace Itereta.Common
 {
     public static class SM2Helper
     {
-        private const int MinIntervalDays = 1;
-        private const int MaxIntervalDays = 365;
+        public const double MinEF = 1.3;
+        public const double InitEF = 2.5;
 
-        private const double MinEasinessFactor = 1.3;
+        private const int MinInterval = 1;
+        private const int MaxInterval = 365;
 
         private const int FirstIntervalDays = 1;
         private const int SecondIntervalDays = 3;
@@ -32,22 +33,22 @@ namespace Itereta.Common
         }
 
 
-        public static (int newInterval, double newEasinessFactor) GetNextState(double easinessFactor, int interval, int repetitionCounter, double quality)
+        public static (int newInterval, double newEasinessFactor) NextIntervalAndEf(double easinessFactor, int interval, int repetitionCounter, double quality)
         {
             int newInterval;
             double newEasinessFactor;
 
+
+            newEasinessFactor = easinessFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+            newEasinessFactor = Math.Max(newEasinessFactor, MinEF);
+
+
             if (!IsPassingQuality(quality))
             {
                 newInterval = FirstIntervalDays;
-                newEasinessFactor = MinEasinessFactor;
             }
             else
             {
-                newEasinessFactor = easinessFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-                newEasinessFactor = Math.Max(newEasinessFactor, MinEasinessFactor);
-
-
                 newInterval = repetitionCounter switch
                 {
                     0 => FirstIntervalDays,
@@ -55,7 +56,7 @@ namespace Itereta.Common
                     _ => (int)Math.Ceiling((interval > 0 ? interval : 1) * newEasinessFactor)
                 };
 
-                newInterval = Math.Clamp(newInterval, MinIntervalDays, MaxIntervalDays);
+                newInterval = Math.Clamp(newInterval, MinInterval, MaxInterval);
             }
 
             return (newInterval, newEasinessFactor);
