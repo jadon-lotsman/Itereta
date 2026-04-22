@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Mnemo.Common;
 using Mnemo.Services;
+using Mnemo.Services.Queries;
 
 namespace Mnemo.Controllers
 {
@@ -13,13 +14,16 @@ namespace Mnemo.Controllers
     [Route("api/[controller]")]
     public class SessionController : ControllerBase
     {
-        public SessionController(RepetitionSessionService sessionService)
+        private readonly SessionQueries _sessionQueries;
+        private readonly RepetitionSessionService _sessionService;
+
+        public SessionController(SessionQueries sessionQueries, RepetitionSessionService sessionService)
         {
+            _sessionQueries = sessionQueries;
             _sessionService = sessionService;
         }
 
         private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-        private readonly RepetitionSessionService _sessionService;
 
 
         [HttpGet("status")]
@@ -70,7 +74,7 @@ namespace Mnemo.Controllers
         [HttpGet("tasks")]
         public async Task<IActionResult> GetAllTasks()
         {
-            var tasks = await _sessionService.GetAllRepetitionTasksAsync(UserId);
+            var tasks = await _sessionQueries.GetAllTasksByUserIdAsync(UserId);
 
             var tasksDto = Mapper.MapToDto(tasks);
             return Ok(tasksDto);
@@ -79,7 +83,7 @@ namespace Mnemo.Controllers
         [HttpGet("tasks/{id:int}")]
         public async Task<IActionResult> GetTaskById(int id)
         {
-            var task = await _sessionService.GetRepetitionTaskByIdAsync(UserId, id);
+            var task = await _sessionQueries.GetRepetitionTaskByIdAsync(UserId, id);
 
             if (task == null)
                 return NotFound();

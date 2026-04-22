@@ -8,62 +8,46 @@ using Mnemo.Common;
 using Mnemo.Contracts.Dtos.Repetition;
 using Mnemo.Data;
 using Mnemo.Data.Entities;
+using Mnemo.Services.Queries;
 
 namespace Mnemo.Services
 {
     public class RepetitionSessionService
     {
         private AppDbContext _context;
-        private AccountManagementService _accountService;
-        private RepetitionStateService _stateService;
-        private VocabularyManagementService _vocabularyService;
+        private AccountQueries _accountQueries;
+        private SessionQueries _sessionQueries;
+        private VocabularyQueries _vocabularyQueries;
 
+        private RepetitionStateService _stateService;
         private static Random _random = new Random();
 
 
-        public RepetitionSessionService(AppDbContext context, AccountManagementService accountService, VocabularyManagementService vocabularyService, RepetitionStateService stateService)
+        public RepetitionSessionService(AppDbContext context, AccountQueries accountQueries, SessionQueries sessionQueries, VocabularyQueries vocabularyQueries, RepetitionStateService stateService)
         {
             _context = context;
-            _accountService = accountService;
-            _vocabularyService = vocabularyService;
+            _accountQueries = accountQueries;
+            _sessionQueries = sessionQueries;
+            _vocabularyQueries = vocabularyQueries;
             _stateService = stateService;
         }
 
 
+
         public async Task<RequestResult<RepetitionSession>> GetRepetitionSessionStatusAsync(int userId)
         {
-            var session = await GetRepetitionSessionAsync(userId);
-            if (session == null) return RequestResult<RepetitionSession>.Failure("SESSION_NOT_FOUND");
+            var session = await _sessionQueries.GetByUserIdAsync(userId);
+
+            if (session == null)    return RequestResult<RepetitionSession>.Failure("SESSION_NOT_FOUND");
             if (session.IsFinished) return RequestResult<RepetitionSession>.Failure("SESSION_WAS_FINISHED");
             else return RequestResult<RepetitionSession>.Failure("SESSION_IN_PROCESS");
-        }
-
-        public async Task<RepetitionSession?> GetRepetitionSessionAsync(int userId)
-        {
-            return await _context.RepetitionSessions
-                .Include(s => s.Tasks)
-                .FirstOrDefaultAsync(s => s.User.Id == userId);
-        }
-
-        public async Task<List<RepetitionTask>> GetAllRepetitionTasksAsync(int userId)
-        {
-            return await _context.RepetitionTasks
-                .Where(t => t.RepetitionSession.UserId == userId)
-                .ToListAsync();
-        }
-
-        public async Task<RepetitionTask?> GetRepetitionTaskByIdAsync(int userId, int taskId)
-        {
-            return await _context.RepetitionTasks
-                .Include(t => t.RepetitionSession)
-                .FirstOrDefaultAsync(t => t.Id == taskId && t.RepetitionSession.UserId == userId);
         }
 
 
 
         public async Task<RequestResult<RepetitionSession>> StartRepetitionSessionAsync(int userId)
         {
-            var user = await _accountService.GetByIdAsync(userId);
+            var user = await _accountQueries.GetByIdAsync(userId);
 
             if (user == null)
                 return RequestResult<RepetitionSession>.Failure("USER_NOT_FOUND");
@@ -79,10 +63,10 @@ namespace Mnemo.Services
             await _stateService.RefreshRepetitionStatesAsync(userId);
 
 
-            var targetEntries = _vocabularyService.GetListOfRandomEntries(userId);
+            var targetEntries = _vocabularyQueries.GetRandomByUserId(userId);
             var tasks = targetEntries.Select(e => new RepetitionTask(e, _random.Next(2) == 0)).ToList();
 
-            var session = new RepetitionSession(user, tasks);
+            var session = new RepetitionSession(userId, tasks);
 
             await _context.RepetitionSessions.AddAsync(session);
             await _context.SaveChangesAsync();
@@ -92,7 +76,7 @@ namespace Mnemo.Services
 
         public async Task<RequestResult<RepetitionSessionResultDto>> FinishRepetitionSessionAsync(int userId)
         {
-            var session = await GetRepetitionSessionAsync(userId);
+            var session = await _sessionQueries.GetByUserIdAsync(userId);
 
             if (session == null)
                 return RequestResult<RepetitionSessionResultDto>.Failure("SESSION_NOT_FOUND");
@@ -109,7 +93,7 @@ namespace Mnemo.Services
 
 
             var entriesIds = session.Tasks.Select(t => t.BaseVocabularyEntryId).ToList();
-            var entriesDict = await _vocabularyService.GetEntriesDictByIdsAsync(userId, entriesIds);
+            var entriesDict = await _vocabularyQueries.GetDictByIdsAsync(userId, entriesIds);
 
             int missedCount = 0;
             var failedEntries = new List<VocabularyEntry>();
@@ -148,7 +132,7 @@ namespace Mnemo.Services
 
         public async Task<RequestResult<RepetitionTask>> SubmitRepetitionTaskAnswerAsync(int userId, int taskId, string answer)
         {
-            var task = await GetRepetitionTaskByIdAsync(userId, taskId);
+            var task = await _sessionQueries.GetRepetitionTaskByIdAsync(userId, taskId);
 
             if (task == null)
                 return RequestResult<RepetitionTask>.Failure("TASK_NOT_FOUND");

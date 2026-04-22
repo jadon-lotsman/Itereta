@@ -20,7 +20,7 @@ namespace tests.Integration.Repetition
             var entry = DataSeeder.CreateEntry(id: 7, userId: user.Id, foreign: "apple", translations: "яблоко");
             var state = DataSeeder.CreateState(id: 1, userId: user.Id, entryId: entry.Id, repetitionCounter: 2, repetitionInterval: 4, ef: SM2Helper.InitEF);
 
-            var existingSession = new RepetitionSession(user, new List<RepetitionTask>() { new RepetitionTask(entry, true) });
+            var existingSession = new RepetitionSession(user.Id, new List<RepetitionTask>() { new RepetitionTask(entry, true) });
 
             DbContext.RepetitionSessions.Add(existingSession);
             await DbContext.SaveChangesAsync();

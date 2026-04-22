@@ -2,58 +2,33 @@
 using Mnemo.Common;
 using Mnemo.Data;
 using Mnemo.Data.Entities;
+using Mnemo.Services.Queries;
 
 namespace Mnemo.Services
 {
     public class RepetitionStateService
     {
         private AppDbContext _context;
-        private AccountManagementService _accountService;
-        private VocabularyManagementService _vocabularyService;
+        private StateQueries _stateQueries;
 
 
-        public RepetitionStateService(AppDbContext context, AccountManagementService accountService, VocabularyManagementService vocabularyService)
+        public RepetitionStateService(AppDbContext context, StateQueries stateQueries)
         {
             _context = context;
-            _accountService = accountService;
-            _vocabularyService = vocabularyService;
+            _stateQueries = stateQueries;
         }
 
-        public IQueryable<RepetitionState> GetRepetitionStatesByUserQuery(int userId)
-        {
-            return _context.RepetitionStates.Where(s => s.UserId == userId);
-        }
-
-        public async Task<RepetitionState?> GetRepetitionStateByEntryIdAsync(int userId, int entryId)
-        {
-            return await GetRepetitionStatesByUserQuery(userId)
-                .FirstOrDefaultAsync(s => s.VocabularyEntryId == entryId);
-        }
-
-        public async Task<List<RepetitionState>> GetAllRepetitionStatesAsync(int userId)
-        {
-            return await GetRepetitionStatesByUserQuery(userId)
-                .ToListAsync();
-        }
-
-
-        public async Task<List<VocabularyEntry>> GetEntriesWithoutRepetitionStateAsync(int userId)
-        {
-            return await _context.Entries.Where(e => e.User.Id == userId)
-                .Where(e => e.RepetitionState == null)
-                .ToListAsync();
-        }
 
 
         public async Task<RequestResult<bool>> RefreshRepetitionStatesAsync(int userId)
         {
-            var entries = await GetEntriesWithoutRepetitionStateAsync(userId);
+            var entries = await _stateQueries.GetEntriesWithoutRepetitionStateAsync(userId);
 
             if (!entries.Any())
                 return RequestResult<bool>.Success(false);
 
 
-            var states = entries.Select(e => new RepetitionState(e.User, e)).ToList();
+            var states = entries.Select(e => new RepetitionState(userId, e)).ToList();
             await _context.RepetitionStates.AddRangeAsync(states);
 
             return RequestResult<bool>.Success(true);
@@ -62,7 +37,7 @@ namespace Mnemo.Services
 
         public async Task<RequestResult<RepetitionState>> UpdateRepetitionStateAsync(int userId, int entryId, double quality, bool shouldIncrementCounter)
         {
-            var state = await GetRepetitionStateByEntryIdAsync(userId, entryId);
+            var state = await _stateQueries.GetByEntryIdAsync(userId, entryId);
 
             if (state == null)
                 return RequestResult<RepetitionState>.Failure("REPETITION_STATE_NOT_FOUND");

@@ -42,7 +42,7 @@ namespace tests.Integration.Repetition
         {
             // Arrange
             var user = DataSeeder.CreateUser(id: 3, username: "Bob");
-            var existingSession = new RepetitionSession(user, new List<RepetitionTask>());
+            var existingSession = new RepetitionSession(user.Id, new List<RepetitionTask>());
 
             DbContext.RepetitionSessions.Add(existingSession);
             await DbContext.SaveChangesAsync();

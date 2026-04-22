@@ -5,6 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using Mnemo.Data.Entities;
 using Mnemo.Services;
+using Mnemo.Services.Queries;
 
 namespace Mnemo.Controllers
 {
@@ -12,20 +13,23 @@ namespace Mnemo.Controllers
     [Route("api/[controller]")]
     public class AccountController : ControllerBase
     {
-        public AccountController(IConfiguration configuration, AccountManagementService accountService)
+        private readonly AccountQueries _accountQueries;
+        private readonly AccountManagementService _accountService;
+
+        public AccountController(IConfiguration configuration, AccountQueries accountQueries, AccountManagementService accountService)
         {
             _configuration = configuration;
+            _accountQueries = accountQueries;
             _accountService = accountService;
         }
 
         private readonly IConfiguration _configuration;
-        private readonly AccountManagementService _accountService;
 
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(string username)
         {
-            var user = await _accountService.GetByUsernameAsync(username);
+            var user = await _accountQueries.GetByUsernameAsync(username);
 
             if (user == null)
                 return Unauthorized();

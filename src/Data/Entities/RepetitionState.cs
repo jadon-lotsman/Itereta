@@ -22,7 +22,7 @@ namespace Mnemo.Data.Entities
 
         public RepetitionState() { }
 
-        public RepetitionState(User user, VocabularyEntry entry)
+        public RepetitionState(int userId, VocabularyEntry entry)
         {
             IterationCounter    = 0;
             IterationInterval   = SM2Helper.MinInterval;
@@ -30,7 +30,7 @@ namespace Mnemo.Data.Entities
             CanSelfAssess       = false;
             LastRepetitionAt    = DateOnly.FromDateTime(DateTime.UtcNow);
 
-            User = user;
+            UserId = userId;
             VocabularyEntry = entry;
         }
     }

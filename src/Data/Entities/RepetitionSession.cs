@@ -33,13 +33,13 @@ namespace Mnemo.Data.Entities
 
         public RepetitionSession() { }
 
-        public RepetitionSession(User user, List<RepetitionTask> tasks)
+        public RepetitionSession(int userId, List<RepetitionTask> tasks)
         {
             StartedAt       = DateTime.UtcNow;
             LastActionAt    = StartedAt;
             FinishedAt      = null;
 
-            User = user;
+            UserId = userId;
             Tasks = tasks;
         }
     }

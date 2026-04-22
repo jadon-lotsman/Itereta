@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Mnemo.Common;
 using Mnemo.Services;
+using Mnemo.Services.Queries;
 
 namespace Mnemo.Controllers
 {
@@ -13,13 +14,16 @@ namespace Mnemo.Controllers
     [Route("api/[controller]")]
     public class StateController : ControllerBase
     {
-        public StateController(RepetitionStateService stateService)
+        private readonly StateQueries _stateQueries;
+        private readonly RepetitionStateService _stateService;
+
+        public StateController(StateQueries stateQueries, RepetitionStateService stateService)
         {
+            _stateQueries = stateQueries;
             _stateService = stateService;
         }
 
         private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-        private readonly RepetitionStateService _stateService;
 
 
         

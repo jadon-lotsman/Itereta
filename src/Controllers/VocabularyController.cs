@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Mnemo.Contracts.Dtos.Vocabulary;
 using Mnemo.Services;
 using Mnemo.Common;
+using Mnemo.Services.Queries;
 
 namespace Mnemo.Controllers
 {
@@ -14,19 +15,23 @@ namespace Mnemo.Controllers
     [Route("api/[controller]")]
     public class VocabularyController : ControllerBase
     {
-        public VocabularyController(VocabularyManagementService vocabularyService)
+        private readonly VocabularyQueries _vocabularyQueries;
+        private readonly VocabularyManagementService _vocabularyService;
+
+
+        public VocabularyController(VocabularyQueries vocabularyQueries, VocabularyManagementService vocabularyService)
         {
+            _vocabularyQueries = vocabularyQueries;
             _vocabularyService = vocabularyService;
         }
 
         private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-        private readonly VocabularyManagementService _vocabularyService;
 
 
         [HttpGet]
         public async Task<IActionResult> GetAllEntries()
         {
-            var entries = await _vocabularyService.GetAllEntriesAsync(UserId);
+            var entries = await _vocabularyQueries.GetAllByUserIdAsync(UserId);
 
             var entriesDto = Mapper.MapToDto(entries);
             return Ok(entriesDto);
@@ -35,7 +40,7 @@ namespace Mnemo.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetEntryById(int id)
         {
-            var entry = await _vocabularyService.GetEntryByIdAsync(UserId, id);
+            var entry = await _vocabularyQueries.GetByIdAsync(UserId, id);
 
             if (entry == null)
                 return NotFound();
@@ -47,7 +52,7 @@ namespace Mnemo.Controllers
         [HttpGet("{key}")]
         public async Task<IActionResult> GetEntryByKey(string key)
         {
-            var entry = await _vocabularyService.GetEntryByKeyAsync(UserId, key);
+            var entry = await _vocabularyQueries.GetByForeignAsync(UserId, key);
 
             if (entry == null)
                 return NotFound();

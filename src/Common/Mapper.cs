@@ -78,15 +78,15 @@ namespace Mnemo.Common
         }
 
 
-        public static VocabularyEntry MapToEntry(VocabularyEntryCreateDto dto, User user)
+        public static VocabularyEntry MapToEntry(VocabularyEntryCreateDto dto, int userId)
         {
             return new VocabularyEntry()
             {
-                User            =   user, 
                 Foreign         =   PrepareForeign(dto.Foreign),
                 Transcription   =   PrepareTranscription(dto.Transcription),
                 Examples        =   PrepareExamples(dto.Examples).ToList(),
-                Translations    =   PrepareTranslations(dto.Translations).ToList()
+                Translations    =   PrepareTranslations(dto.Translations).ToList(),
+                UserId          =   userId
             };
         }
 

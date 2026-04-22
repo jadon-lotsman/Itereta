@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Mnemo.Common;
 using Mnemo.Data;
 using Mnemo.Data.Entities;
+using Mnemo.Services.Queries;
 
 namespace Mnemo.Services
 {
@@ -14,27 +15,20 @@ namespace Mnemo.Services
     {
         private AppDbContext _context;
 
+        private AccountQueries _accountQueries;
 
-        public AccountManagementService(AppDbContext context)
+
+        public AccountManagementService(AppDbContext context, AccountQueries accountQueries)
         {
             _context = context;
+            _accountQueries = accountQueries;
         }
 
-
-        public async Task<User?> GetByIdAsync(int userId)
-        {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-        }
-
-        public async Task<User?> GetByUsernameAsync(string username)
-        {
-            return await _context.Users.FirstOrDefaultAsync(u => string.Equals(u.Username, username));
-        }
 
 
         public async Task<RequestResult<bool>> CreateAsync(string username)
         {
-            if (await GetByUsernameAsync(username) != null)
+            if (await _accountQueries.ExistsByUsernameAsync(username))
                 return RequestResult<bool>.Failure("USERNAME_TAKEN");
 
             //if (string.IsNullOrWhiteSpace(password))
