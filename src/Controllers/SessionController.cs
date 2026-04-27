@@ -38,15 +38,16 @@ namespace Mnemo.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> StartRepetitionSession()
+        public async Task<IActionResult> StartRepetitionSession([FromQuery] string mode)
         {
-            var result = await _sessionService.StartRepetitionSessionAsync(UserId);
+            var result = await _sessionService.StartRepetitionSessionAsync(UserId, mode);
 
             if (!result.IsSuccess)
             {
                 return result.ErrorCode switch
                 {
                     ErrorCode.UserNotFound => NotFound(result.ErrorMessage),
+                    ErrorCode.TaskNotFound => NotFound(result.ErrorMessage),
                     ErrorCode.SessionNotFinished => BadRequest(result.ErrorMessage),
                     _ => StatusCode(500, result.ErrorMessage)
                 };

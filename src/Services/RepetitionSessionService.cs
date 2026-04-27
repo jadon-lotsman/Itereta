@@ -53,7 +53,7 @@ namespace Mnemo.Services
 
 
 
-        public async Task<RequestResult<RepetitionSession>> StartRepetitionSessionAsync(int userId)
+        public async Task<RequestResult<RepetitionSession>> StartRepetitionSessionAsync(int userId, string mode)
         {
             if (!await _accountQueries.ExistsByIdAsync(userId))
                 return RequestResult<RepetitionSession>.Failure(ErrorCode.UserNotFound);
@@ -65,7 +65,17 @@ namespace Mnemo.Services
             await _stateService.RefreshRepetitionStatesAsync(userId);
 
 
-            var targetEntries = _vocabularyQueries.GetRandomByUserId(userId);
+            var targetEntries = mode switch
+            {
+                "random" => _vocabularyQueries.GetRandomByUserId(userId),
+                "due"  => _vocabularyQueries.GetDueByUserIdAsync(userId),
+                _ => new List<VocabularyEntry>()
+            };
+
+            if (!targetEntries.Any())
+                return RequestResult<RepetitionSession>.Failure(ErrorCode.TaskNotFound);
+
+
             var tasks = targetEntries.Select(e => new RepetitionTask(e, _random.Next(2) == 0)).ToList();
 
             var session = new RepetitionSession(userId, tasks);

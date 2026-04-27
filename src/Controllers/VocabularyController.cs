@@ -74,7 +74,7 @@ namespace Mnemo.Controllers
                 {
                     ErrorCode.InvalidData => BadRequest(result.ErrorMessage),
                     ErrorCode.UserNotFound => NotFound(result.ErrorMessage),
-                    ErrorCode.DuplicateEntry => Conflict(result.ErrorCode),
+                    ErrorCode.DuplicateEntry => Conflict(result.ErrorMessage),
                     _ => StatusCode(500, result.ErrorMessage)
                 };
             }

@@ -55,13 +55,13 @@ namespace Mnemo.Services.Queries
                 .ToList();
         }
 
-        public async Task<List<VocabularyEntry>> GetDueByUserIdAsync(int userId, int count = 5)
+        public List<VocabularyEntry> GetDueByUserIdAsync(int userId, int count = 5)
         {
-            return await _context.Entries.Where(e => e.User.Id == userId)
+            return _context.Entries.Where(e => e.User.Id == userId)
                 .Include(e => e.RepetitionState)
-                .Where(e => e.RepetitionState.NextRepetitionAt <= DateOnly.FromDateTime(DateTime.UtcNow))
+                .Where(e => e.RepetitionState.LastRepetitionAt.AddDays(e.RepetitionState.RepetitionInterval) <= DateOnly.FromDateTime(DateTime.UtcNow))
                 .Take(count)
-                .ToListAsync();
+                .ToList();
         }
     }
 }

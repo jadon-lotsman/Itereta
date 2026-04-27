@@ -19,7 +19,7 @@
 
             double Accuracy = CalcFuzzyAccuracy(similarity);
 
-            var ratio = averageTime / actionTime;
+            var ratio = actionTime > TimeSpan.Zero ? averageTime / actionTime : 0;
             double Reaction = CalcSigmoidReaction(ratio);
 
             double Knowledge = 0.6 * Accuracy + 0.2 * Stability + 0.2 * Reaction;
