@@ -170,14 +170,12 @@ namespace Mnemo.Services.RepetitionService
             int maxPerDay = _options.Value.RepetitionTaskCount;
 
             int totalMoved = 0;
-
-            int overfilledBefore, overfilledAfter;
             int totalStates = groups.Values.Sum(list => list.Count);
+            int overfilledBefore, overfilledAfter;
 
             _logger.LogInformation("Starting balance {Count} states from user (UserId:{UserId})", totalStates, userId);
 
             Stopwatch stopwatch = Stopwatch.StartNew();
-
             overfilledBefore = groups
                 .Count(g => g.Value.Count() > maxPerDay);
 
@@ -191,8 +189,6 @@ namespace Mnemo.Services.RepetitionService
                     .OrderByDescending(g => g.Value.Count())
                     .ThenBy(g => g.Key)
                     .ToList();
-
-
 
                 if (!overfilled.Any())
                 {
@@ -240,7 +236,6 @@ namespace Mnemo.Services.RepetitionService
 
             overfilledAfter = groups
                 .Count(g => g.Value.Count() > maxPerDay);
-
             stopwatch.Stop();
 
             _logger.LogDebug("Balance finished with: TotalMoved:{TotalMoved}, OverfilledDays: {before} -> {after}. It took {ElapsedMs} ms for user (UserId:{UserId}). Saving...",

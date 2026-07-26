@@ -31,9 +31,7 @@ namespace Mnemo.Services.RepetitionService.Strategies
                 .Include(e => e.RepetitionState)
                 .NotDueEntries()
                 .NotRepeatedTodayEntries()
-                .OrderBy(e => e.Id)
-                .Take(take);
-
+                .GetRandomEntries(take);
 
             var mixQuery = priorityEntriesQuery;
 

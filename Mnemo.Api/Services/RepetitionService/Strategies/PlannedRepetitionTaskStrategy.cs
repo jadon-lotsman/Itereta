@@ -30,8 +30,7 @@ namespace Mnemo.Services.RepetitionService.Strategies
                 .GetByUserIdQuery(userId)
                 .Include(e => e.RepetitionState)
                 .DueEntries()
-                .OrderBy(e => e.Id)
-                .Take(take);
+                .GetRandomEntries(take);
 
             return query;
         }

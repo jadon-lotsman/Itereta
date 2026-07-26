@@ -39,7 +39,6 @@ namespace Mnemo.Services.RepetitionService.Strategies
 
             var query = await GetEntriesQuery(userId, take);
             var targetEntries = await query
-                .OrderBy(e => EF.Functions.Random())
                 .ToListAsync();
 
 

@@ -60,6 +60,10 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
+input {
+  text-transform: none;
+}
+
 button {
   margin-top: 20px;
 }
