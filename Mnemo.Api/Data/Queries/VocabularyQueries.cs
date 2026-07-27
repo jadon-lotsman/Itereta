@@ -34,13 +34,21 @@ namespace Mnemo.Data.Queries
         public async Task<VocabularyEntry?> GetByIdAsync(int userId, int id)
             => await GetByUserIdQuery(userId).FirstOrDefaultAsync(e => e.Id == id);
 
-        public async Task<Dictionary<int, VocabularyEntry>> GetDictByIdsAsync(int userId, IEnumerable<int> ids)
+        public async Task<HashSet<(string Foreign, PartOfSpeech? PartOfSpeech)>> GetExistingKeysAsync(int userId, IEnumerable<string> foreigns)
         {
-            var list = await GetByUserIdQuery(userId)
-                .Where(e => ids.Contains(e.Id))
+            foreigns = foreigns.Distinct().ToList();
+
+            if (!foreigns.Any())
+                return new HashSet<(string, PartOfSpeech?)>();
+
+            var existing = await GetByUserIdQuery(userId)
+                .Where(e => foreigns.Contains(e.Foreign))
+                .Select(e => new { e.Foreign, e.PartOfSpeech })
                 .ToListAsync();
 
-            return list.ToDictionary(e => e.Id);
+            return existing
+                .Select(e => (e.Foreign, e.PartOfSpeech))
+                .ToHashSet();
         }
 
         public async Task<List<VocabularyEntry>> GetByQueryAsync(int userId, string query, int limit = 20)

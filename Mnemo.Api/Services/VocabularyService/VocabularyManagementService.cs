@@ -203,45 +203,93 @@ namespace Mnemo.Services.VocabularyService
 
         public async Task<RequestResult<VocabularyEntry>> CreateEntryAsync(int userId, CreateEntryRequest request)
         {
-            _logger.LogInformation("Attempting to create vocabulary entry for user (UserId:{UserId}): Foreign:{Foreign}, PartOfSpeech:{PartOfSpeech}", userId, request.Foreign, request.PartOfSpeech ?? "without(null)");
+            var result = await CreateEntriesAsync(userId, new List<CreateEntryRequest>() { request });
+            return result.Results.First();
+        }
 
-            var validationResult = await _createValidator.ValidateAsync(request);
-            if (!validationResult.IsValid)
-            {
-                var messages = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
-                _logger.LogWarning("CreateEntryRequest (UserId:{UserId}) is not valid: {messages}", userId, messages);
-                return RequestResult<VocabularyEntry>.Failure(ErrorCode.InvalidData, messages);
-            }
-
+        public async Task<MassRequestResult<VocabularyEntry>> CreateEntriesAsync(int userId, List<CreateEntryRequest> requests)
+        {
+            _logger.LogInformation("Attempting to create {Count} vocabulary entries for user (UserId:{UserId})", requests.Count, userId);
 
             if (!await _accountQueries.ExistsByIdAsync(userId))
             {
                 _logger.LogWarning("User (UserId:{UserId}) not found", userId);
-                return RequestResult<VocabularyEntry>.Failure(ErrorCode.UserNotFound);
+                return MassRequestResult<VocabularyEntry>.AbsolutelyFailure(requests.Count, ErrorCode.UserNotFound);
             }
 
 
-            var entry = _mapper.Map<VocabularyEntry>(request);
+            var results = new List<RequestResult<VocabularyEntry>>();
 
-            if (await _vocabularyQueries.ExistsByKeysAsync(userId, entry.Foreign, entry.PartOfSpeech))
+
+            _logger.LogDebug("Requests validating from user (UserId:{UserId})...", userId);
+
+            var validReq = new List<CreateEntryRequest>();
+            foreach (var req in requests)
             {
-                _logger.LogWarning("Duplicate entry for user (UserId:{UserId}): Foreign:{Foreign}, PartOfSpeech:{PartOfSpeech}", userId, entry.Foreign, entry.PartOfSpeech?.ToString() ?? "without(null)");
-                return RequestResult<VocabularyEntry>.Failure(ErrorCode.DuplicateEntry, "Entry already exists");
+                var validationResult = await _createValidator.ValidateAsync(req);
+                if (!validationResult.IsValid)
+                {
+                    var messages = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+
+                    _logger.LogWarning("CreateEntryRequest (UserId:{UserId}) is not valid: {messages}", userId, messages);
+                    results.Add(RequestResult<VocabularyEntry>.Failure(ErrorCode.InvalidData, messages));
+                    continue;
+                }
+
+                validReq.Add(req);
+            }
+
+            if (!validReq.Any())
+            {
+                _logger.LogInformation("All requests ({Count}) is not valid from user (UserId:{UserId})", requests.Count, userId);
+                return MassRequestResult<VocabularyEntry>.PartialSuccess(results);
             }
 
 
-            entry.UserId = userId;
-            entry.RepetitionState = new RepetitionState()
+            var validEntries = _mapper.Map<List<VocabularyEntry>>(validReq);
+
+            _logger.LogDebug("Exclude entry duplicates from user (UserId:{UserId})...", userId);
+
+            var foreigns = validReq
+                .Select(r => r.Foreign)
+                .Where(f => !string.IsNullOrWhiteSpace(f))
+                .Distinct()
+                .ToList();
+
+            var existingKeys = await _vocabularyQueries
+                .GetExistingKeysAsync(userId, foreigns!);
+
+
+            var entriesToAdd = new List<VocabularyEntry>();
+            foreach (var entry in validEntries)
             {
-                EasinessFactor = _sm2.Value.InitEF,
-                RepetitionInterval = _sm2.Value.MinInterval
-            };
+                if (existingKeys.Contains((entry.Foreign, entry.PartOfSpeech)))
+                {
+                    _logger.LogWarning("Duplicate entry for user (UserId:{UserId}): Foreign:{Foreign}, PartOfSpeech:{PartOfSpeech}", userId, entry.Foreign, entry.PartOfSpeech);
+                    results.Add(RequestResult<VocabularyEntry>.Failure(ErrorCode.DuplicateEntry, $"Entry '{entry.Foreign}' ({entry.PartOfSpeech}) already exists"));
+                    continue;
+                }
 
-            await _context.Entries.AddAsync(entry);
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("Created vocabulary entry (EntryId:{EntryId}) for user (UserId:{UserId})", entry.Id, userId);
+                entry.UserId = userId;
+                entry.RepetitionState = new RepetitionState()
+                {
+                    EasinessFactor = _sm2.Value.InitEF,
+                    RepetitionInterval = _sm2.Value.MinInterval
+                };
 
-            return RequestResult<VocabularyEntry>.Success(entry);
+                entriesToAdd.Add(entry);
+                results.Add(RequestResult<VocabularyEntry>.Success(entry));
+            }
+
+
+            if (entriesToAdd.Any())
+            {
+                await _context.Entries.AddRangeAsync(entriesToAdd);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Created {Count} vocabulary entry for user (UserId:{UserId})", entriesToAdd.Count, userId);
+            }
+
+            return MassRequestResult<VocabularyEntry>.PartialSuccess(results);
         }
 
         public async Task<RequestResult<VocabularyEntry>> PatchEntryAsync(int userId, int entryId, PatchEntryRequest request)
