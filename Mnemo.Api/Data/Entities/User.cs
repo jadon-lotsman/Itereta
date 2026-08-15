@@ -11,6 +11,7 @@
         public List<RepetitionTask> RepetitionTasks { get; set; }
         public List<RepetitionState> RepetitionStates { get; set; }
         public List<VocabularyEntry> VocabularyEntries { get; set; }
+        public List<VocabularyPack> VocabularyPacks { get; set; }
 
 
         public User() { }
@@ -20,8 +21,10 @@
             Username = username;
             RegisteredAt = DateTime.UtcNow;
 
+            RepetitionTasks = new List<RepetitionTask>();
             RepetitionStates = new List<RepetitionState>();
             VocabularyEntries = new List<VocabularyEntry>();
+            VocabularyPacks = new List<VocabularyPack>();
         }
     }
 }

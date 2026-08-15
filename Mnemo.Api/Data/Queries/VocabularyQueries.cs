@@ -17,7 +17,7 @@ namespace Mnemo.Data.Queries
 
         // Queries
         public IQueryable<VocabularyEntry> GetByUserIdQuery(int userId)
-            => _context.Entries.Where(e => e.User.Id == userId);
+            => _context.Entries.Where(e => e.UserId == userId);
 
 
         // Getters

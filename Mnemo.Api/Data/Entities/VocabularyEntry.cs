@@ -3,37 +3,28 @@ using Mnemo.Shared.Enums;
 
 namespace Mnemo.Data.Entities
 {
-    public class VocabularyEntry
+    public class VocabularyEntry : VocabularyDefinition
     {
         public int Id { get; set; }
-
-        public PartOfSpeech? PartOfSpeech { get; set; }
-        public string Foreign { get; set; }
-        public string? Transcription { get; set; }
-        public string? TranscriptionAudioUrl { get; set; }
-        public List<string> Examples { get; set; }
-        public List<string> Translations { get; set; }
-        public List<string> Synonyms { get; set; }
-        public List<string> Antonyms { get; set; }
         public EnrichmentStatus EnrichmentStatus { get; set; }
         public DateTime LastEnrichmentAt { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
 
 
         public int UserId { get; set; }
         public User User { get; set; }
+        public int? SourcePackId { get; set; }
+        public VocabularyPack? SourcePack { get; set; }
         public RepetitionState? RepetitionState { get; set; }
 
 
         public VocabularyEntry()
         {
-            Examples = new List<string>();
-            Translations = new List<string>();
-            Synonyms = new List<string>();
-            Antonyms = new List<string>();
             EnrichmentStatus = EnrichmentStatus.Pending;
             LastEnrichmentAt = DateTime.UtcNow;
             CreatedAt = DateTime.UtcNow;
+            UpdatedAt = CreatedAt;
         }
 
 
@@ -48,8 +39,8 @@ namespace Mnemo.Data.Entities
             {
                 Transcription = enrich.Transcription;
 
-                if (TranscriptionAudioUrl == null && enrich.TranscriptionAudioUrl != null)
-                    TranscriptionAudioUrl = enrich.TranscriptionAudioUrl;
+                if (AudioUrl == null && enrich.TranscriptionAudioUrl != null)
+                    AudioUrl = enrich.TranscriptionAudioUrl;
 
                 isEnriched = true;
             }
@@ -73,7 +64,7 @@ namespace Mnemo.Data.Entities
         public void ResetAllMeta()
         {
             Transcription = null;
-            TranscriptionAudioUrl = null;
+            AudioUrl = null;
             Synonyms.Clear();
             Antonyms.Clear();
             EnrichmentStatus = EnrichmentStatus.Pending;
@@ -81,7 +72,7 @@ namespace Mnemo.Data.Entities
 
         public void ResetAudio()
         {
-            TranscriptionAudioUrl = null;
+            AudioUrl = null;
             EnrichmentStatus = EnrichmentStatus.Pending;
         }
     }

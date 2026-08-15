@@ -13,10 +13,15 @@ namespace Mnemo.Controllers.Validation
                 .When(x => x.PartOfSpeech != null)
                 .WithMessage($"Invalid Part of Speech. Allowed values: {string.Join(", ", Enum.GetNames<PartOfSpeech>())}");
 
+            RuleFor(x => x.CERF)
+                .Must(VocabularyValidatorRules.IsValidCEFRLevel)
+                .When(x => x.CERF != null)
+                .WithMessage($"Invalid CEFR level. Allowed values: {string.Join(", ", Enum.GetNames<CEFRLevel>())}");
+
             RuleFor(x => x.Foreign)
                 .NotEmpty().WithMessage("Foreign word is required")
                 .Must(VocabularyValidatorRules.IsValidForeign)
-                .WithMessage("Foreign must contain only letters, spaces, apostrophes, hyphens (no digits or special chars)");
+                .WithMessage("Foreign must contain only letters (no digits or special chars)");
 
             RuleFor(x => x.Transcription)
                 .Must(VocabularyValidatorRules.IsValidTranscription)

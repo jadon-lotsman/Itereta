@@ -8,6 +8,9 @@ namespace Mnemo.Data
         public DbSet<User> Users { get; set; }
         public DbSet<VocabularyEntry> Entries { get; set; }
 
+        public DbSet<VocabularyPack> Packs { get; set; }
+        public DbSet<VocabularyPackEntry> PackEntries { get; set; }
+
         public DbSet<RepetitionState> RepetitionStates { get; set; }
         public DbSet<RepetitionTask> RepetitionTasks { get; set; }
 
@@ -16,6 +19,13 @@ namespace Mnemo.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // VocabularyEntry
+            modelBuilder.Entity<VocabularyEntry>()
+                .HasIndex(e => new { e.UserId, e.Foreign, e.PartOfSpeech });
+
+            modelBuilder.Entity<VocabularyEntry>()
+                .HasIndex(e => new { e.UserId, e.SourcePackId });
+
             modelBuilder.Entity<VocabularyEntry>()
                 .HasOne(e => e.RepetitionState)
                 .WithOne(s => s.VocabularyEntry)
@@ -28,6 +38,29 @@ namespace Mnemo.Data
                 .HasForeignKey(e => e.UserId);
 
 
+            // RepetitionState
+            modelBuilder.Entity<RepetitionState>()
+                .HasIndex(s => s.VocabularyEntryId)
+                .IsUnique();
+
+
+            // VocabularyPack
+            modelBuilder.Entity<VocabularyPack>()
+                .HasIndex(p => p.AuthorId);
+
+            modelBuilder.Entity<VocabularyPack>()
+                .HasMany(p => p.PackEntries)
+                .WithOne(e => e.VocabularyPack)
+                .HasForeignKey(e => e.VocabularyPackId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<VocabularyPack>()
+                .HasOne(p => p.Author)
+                .WithMany(u => u.VocabularyPacks)
+                .HasForeignKey(p => p.AuthorId);
+
+
+            // RepetitionTask
             modelBuilder.Entity<RepetitionTask>()
                 .HasDiscriminator<string>("task_type")
                 .HasValue<TextRepetitionTask>("text")

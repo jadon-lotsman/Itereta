@@ -17,6 +17,15 @@ namespace Mnemo.Shared.Extensions
                 _partOfSpeech = parsedPartOfSpeech;
             }
 
+            CEFRLevel? _cefr = null;
+            if (patch.CEFR != null)
+            {
+                if (!Enum.TryParse<CEFRLevel>(patch.CEFR, true, out var parsedCEFRLevel))
+                    return false;
+
+                _cefr = parsedCEFRLevel;
+            }
+
             string? _foreign = null;
             if (patch.Foreign != null)
             {
@@ -79,12 +88,14 @@ namespace Mnemo.Shared.Extensions
 
             if (_partOfSpeech != null)
                 entry.PartOfSpeech = _partOfSpeech.Value;
+            if (_cefr != null)
+                entry.CEFR = _cefr.Value;
             if (_foreign != null)
                 entry.Foreign = _foreign;
             if (_transcription != null)
                 entry.Transcription = _transcription;
             if (_transcriptionAudioUrl != null)
-                entry.TranscriptionAudioUrl = _transcriptionAudioUrl;
+                entry.AudioUrl = _transcriptionAudioUrl;
 
             if (_examplesToAdd != null)
                 entry.Examples.AddRange(_examplesToAdd);

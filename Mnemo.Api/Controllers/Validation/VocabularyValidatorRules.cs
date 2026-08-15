@@ -23,6 +23,14 @@ namespace Mnemo.Controllers.Validation
             return Enum.TryParse<PartOfSpeech>(partOfSpeech, true, out _);
         }
 
+        public static bool IsValidCEFRLevel(string? cefr)
+        {
+            if (string.IsNullOrWhiteSpace(cefr))
+                return false;
+
+            return Enum.TryParse<CEFRLevel>(cefr, true, out _);
+        }
+
         public static bool IsValidForeign(string? foreign)
         {
             if (string.IsNullOrWhiteSpace(foreign))

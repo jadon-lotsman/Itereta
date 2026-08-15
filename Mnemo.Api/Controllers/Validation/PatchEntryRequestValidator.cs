@@ -12,16 +12,20 @@ namespace Mnemo.Controllers.Validation
                 .Must(AtLeastOneFieldSpecified)
                 .WithMessage("At least one field must be provided for update");
 
-
             RuleFor(x => x.PartOfSpeech)
                 .Must(VocabularyValidatorRules.IsValidPartOfSpeech)
                 .When(x => x.PartOfSpeech != null)
                 .WithMessage($"Invalid Part of Speech. Allowed values: {string.Join(", ", Enum.GetNames<PartOfSpeech>())}");
 
+            RuleFor(x => x.CEFR)
+                .Must(VocabularyValidatorRules.IsValidCEFRLevel)
+                .When(x => x.CEFR != null)
+                .WithMessage($"Invalid CEFR level. Allowed values: {string.Join(", ", Enum.GetNames<CEFRLevel>())}");
+
             RuleFor(x => x.Foreign)
                 .Must(VocabularyValidatorRules.IsValidForeign)
                 .When(x => x.Foreign != null)
-                .WithMessage("Foreign must contain only letters, spaces, apostrophes, hyphens (no digits or special chars)");
+                .WithMessage("Foreign must contain only letters (no digits or special chars)");
 
             RuleFor(x => x.Transcription)
                 .Must(VocabularyValidatorRules.IsValidTranscription)
