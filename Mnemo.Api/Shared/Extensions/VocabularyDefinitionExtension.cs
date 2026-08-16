@@ -4,9 +4,9 @@ using Mnemo.Shared.Enums;
 
 namespace Mnemo.Shared.Extensions
 {
-    public static class VocabularyEntryExtension
+    public static class VocabularyDefinitionExtension
     {
-        public static bool TryPatch(this VocabularyEntry entry, PatchEntryRequest patch)
+        public static bool TryPatch(this VocabularyDefinition entry, PatchEntryRequest patch)
         {
             PartOfSpeech? _partOfSpeech = null;
             if (patch.PartOfSpeech != null)
