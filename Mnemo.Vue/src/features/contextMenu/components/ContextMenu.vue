@@ -69,7 +69,7 @@ function handleItemClick(item: ContextMenuItem) {
   backdrop-filter: blur(2px);
 
   min-width: 220px;
-  padding: 8px 6px 10px 6px;
+  padding: 7px 6px 10px 6px;
 
   z-index: 9999;
 
@@ -77,7 +77,7 @@ function handleItemClick(item: ContextMenuItem) {
     display: flex;
     flex-direction: column;
 
-    gap: 2px;
+    gap: 1px;
 
     &::after {
       content: '';
@@ -110,7 +110,6 @@ function handleItemClick(item: ContextMenuItem) {
         @include iconize-text;
 
         color: $shadow;
-        opacity: 85%;
 
         margin-left: 8px;
         margin-right: 12px;
@@ -144,8 +143,8 @@ function handleItemClick(item: ContextMenuItem) {
 
       color: $gray-font;
 
-      margin-top: 5px;
-      margin-left: 12px;
+      margin-top: 6px;
+      margin-left: 10px;
 
       font-size: 15px;
     }
