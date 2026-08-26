@@ -128,7 +128,7 @@ async function openContextMenu(event: MouseEvent, entry: VocabularyEntry) {
   const creatingDate = format(new Date(entry.createdAt), 'd MMM, yyyy')
   const menuDescriptions: string[] = [`Created at ${creatingDate}`]
 
-  contextMenu.open(event, menuItems, menuDescriptions)
+  contextMenu.openContext(event, menuItems, menuDescriptions)
 }
 
 async function setupObserver() {
@@ -193,7 +193,7 @@ watch(triggerRef, (newVal) => {
     <VocabularyNavbar
       :is-loading="vocabulary.loadingPlaceholder.showSkeleton"
       :tablets="vocabulary.sectors"
-      :disable-tablets="searched.length > 0"
+      :disabled-tablets="searched.length > 0"
       @refresh-sort="onSortSubmit"
       @submit-sector="onSectorSubmit"
     />
@@ -223,11 +223,13 @@ watch(triggerRef, (newVal) => {
 
     <ContextMenu
       :is-open="contextMenu.isOpen.value"
-      :x="contextMenu.x.value"
-      :y="contextMenu.y.value"
-      :items="contextMenu.items.value"
-      :descriptions="contextMenu.descriptions.value"
-      @close="contextMenu.close"
+      :pos-x="contextMenu.anchorX.value"
+      :pos-y="contextMenu.anchorY.value"
+      :is-x-offsetted="contextMenu.isXOffsetted.value"
+      :is-y-offsetted="contextMenu.isYOffsetted.value"
+      :items="contextMenu.menuItems.value"
+      :details="contextMenu.menuDetails.value"
+      @close="contextMenu.closeContext"
     />
   </div>
 </template>

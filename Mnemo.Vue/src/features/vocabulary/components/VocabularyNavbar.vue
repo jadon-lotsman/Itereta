@@ -5,7 +5,7 @@ import type { VocabularySector } from '../types/VocabularySector'
 defineProps<{
   isLoading: boolean
   tablets: VocabularySector[]
-  disableTablets: boolean
+  disabledTablets: boolean
 }>()
 
 const emit = defineEmits<{
@@ -40,7 +40,7 @@ function submitSector(startWord: string, endWord: string) {
     <button
       class="tablet-button"
       :class="{ flipped: isDescending }"
-      :disabled="sortTimeout || isLoading || disableTablets"
+      :disabled="sortTimeout || isLoading || disabledTablets"
       @click="submitSort"
     >
       <span>sort</span>
@@ -49,14 +49,14 @@ function submitSector(startWord: string, endWord: string) {
     <div class="tablet-container">
       <label
         class="tablet-radio"
-        :class="{ disabled: isLoading || disableTablets }"
+        :class="{ disabled: isLoading || disabledTablets }"
         v-for="tablet in tablets"
         :key="tablet.label"
       >
         <input
           type="radio"
           name="mode"
-          :disabled="isLoading || disableTablets"
+          :disabled="isLoading || disabledTablets"
           :checked="pageStartWord === tablet.startWord || tablet === tablets[0]"
           @change="submitSector(tablet.startWord, tablet.endWord)"
         />
@@ -86,6 +86,7 @@ function submitSector(startWord: string, endWord: string) {
     height: 26px;
 
     text-align: center;
+    white-space: nowrap;
   }
 
   .tablet-button {

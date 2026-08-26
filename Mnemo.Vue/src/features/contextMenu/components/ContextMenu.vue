@@ -3,10 +3,12 @@ import type { ContextMenuItem } from '../types/ContextMenuItem'
 
 const props = defineProps<{
   isOpen: boolean
-  x: number
-  y: number
+  posX: number
+  posY: number
+  isXOffsetted: boolean
+  isYOffsetted: boolean
   items: ContextMenuItem[]
-  descriptions: string[]
+  details: string[]
 }>()
 
 const emit = defineEmits<{
@@ -26,14 +28,21 @@ function handleItemClick(item: ContextMenuItem) {
       <div
         v-if="isOpen"
         class="context-menu"
-        :style="{ top: y + 'px', left: 12 + x + 'px' }"
+        :class="{
+          'triangle-left-top': !isXOffsetted && !isYOffsetted,
+          'triangle-right-top': isXOffsetted && !isYOffsetted,
+          'triangle-left-bottom': !isXOffsetted && isYOffsetted,
+          'triangle-right-bottom': isXOffsetted && isYOffsetted,
+        }"
+        :style="{ top: posY + 'px', left: posX + 'px' }"
         @click.stop
       >
+        <div class="triangle"></div>
         <header>
           <div v-for="contextItem in props.items" :key="contextItem.label">
             <div
               class="item"
-              :class="{ disable: contextItem.disabled }"
+              :class="{ disabled: contextItem.disabled }"
               @mousedown.prevent
               @click="handleItemClick(contextItem)"
             >
@@ -44,7 +53,7 @@ function handleItemClick(item: ContextMenuItem) {
         </header>
         <footer>
           <div class="descriptions">
-            <span v-for="descr in descriptions" :key="descr">{{ descr }}.</span>
+            <span v-for="info in details" :key="info">{{ info }}.</span>
           </div>
         </footer>
       </div>
@@ -61,11 +70,9 @@ function handleItemClick(item: ContextMenuItem) {
   flex-direction: column;
 
   background-color: $cloud-white;
-  border-radius: 0px 12px 12px 12px;
+  border-radius: 12px;
 
-  box-shadow: 5px 5px 0px $shadow;
-
-  filter: drop-shadow(0px 0px 8px #bbbbbb4d);
+  filter: drop-shadow(0px 0px 10px #bbbbbb4d) drop-shadow(5px 5px 0px $shadow);
   backdrop-filter: blur(2px);
 
   min-width: 220px;
@@ -77,24 +84,7 @@ function handleItemClick(item: ContextMenuItem) {
     display: flex;
     flex-direction: column;
 
-    gap: 1px;
-
-    &::after {
-      content: '';
-
-      position: absolute;
-
-      width: 0;
-      height: 0;
-      border: 8px solid transparent;
-      border-top: 8px solid $cloud-white;
-      border-right: 8px solid $cloud-white;
-
-      top: 0px;
-      left: -12px;
-
-      background-color: transparent;
-    }
+    gap: 2px;
 
     .item {
       cursor: pointer;
@@ -123,7 +113,7 @@ function handleItemClick(item: ContextMenuItem) {
       }
     }
 
-    .item.disable {
+    .item.disabled {
       cursor: default;
 
       color: $shadow;
@@ -149,6 +139,45 @@ function handleItemClick(item: ContextMenuItem) {
       font-size: 15px;
     }
   }
+}
+
+.triangle {
+  display: block;
+  position: absolute;
+  width: 0;
+  height: 0;
+  background-color: transparent;
+}
+
+@mixin triangle-corner($v, $h) {
+  .triangle {
+    border: 8px solid transparent;
+    border-#{$v}: 8px solid $cloud-white;
+    @if $h == left {
+      border-right: 8px solid $cloud-white;
+    } @else {
+      border-left: 8px solid $cloud-white;
+    }
+    #{$v}: 0px;
+    #{$h}: -12px;
+  }
+}
+
+.triangle-left-top {
+  border-top-left-radius: 0 !important;
+  @include triangle-corner(top, left);
+}
+.triangle-right-top {
+  border-top-right-radius: 0 !important;
+  @include triangle-corner(top, right);
+}
+.triangle-left-bottom {
+  border-bottom-left-radius: 0 !important;
+  @include triangle-corner(bottom, left);
+}
+.triangle-right-bottom {
+  border-bottom-right-radius: 0 !important;
+  @include triangle-corner(bottom, right);
 }
 
 .context-fade-enter-active,
