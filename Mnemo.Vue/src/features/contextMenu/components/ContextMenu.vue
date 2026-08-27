@@ -1,24 +1,30 @@
 <script setup lang="ts">
-import type { ContextMenuItem } from '../types/ContextMenuItem'
+import { useContextMenu } from '@/shared/composables/useContextMenu'
+import type { ContextMenuOption } from '../types/ContextMenuOption'
+import { computed } from 'vue'
 
-const props = defineProps<{
-  isOpen: boolean
-  posX: number
-  posY: number
-  isXOffsetted: boolean
-  isYOffsetted: boolean
-  items: ContextMenuItem[]
-  details: string[]
-}>()
+const {
+  isVisible,
+  anchorX,
+  anchorY,
+  isLeftAligned,
+  isTopAligned,
+  menuOptions,
+  menuDetails,
+  closeMenu,
+} = useContextMenu()
 
-const emit = defineEmits<{
-  (e: 'close'): void
-}>()
+const triangleClass = computed(() => {
+  const vertical = isTopAligned.value ? 'bottom' : 'top'
+  const horizontal = isLeftAligned.value ? 'right' : 'left'
+  return `triangle-${vertical}-${horizontal}`
+})
 
-function handleItemClick(item: ContextMenuItem) {
+function invokeOption(item: ContextMenuOption) {
   if (item.disabled) return
+
   item.action()
-  emit('close')
+  closeMenu()
 }
 </script>
 
@@ -26,34 +32,29 @@ function handleItemClick(item: ContextMenuItem) {
   <Teleport to="body">
     <Transition name="context-fade">
       <div
-        v-if="isOpen"
+        v-if="isVisible"
         class="context-menu"
-        :class="{
-          'triangle-left-top': !isXOffsetted && !isYOffsetted,
-          'triangle-right-top': isXOffsetted && !isYOffsetted,
-          'triangle-left-bottom': !isXOffsetted && isYOffsetted,
-          'triangle-right-bottom': isXOffsetted && isYOffsetted,
-        }"
-        :style="{ top: posY + 'px', left: posX + 'px' }"
+        :class="triangleClass"
+        :style="{ top: anchorY + 'px', left: anchorX + 'px' }"
         @click.stop
       >
         <div class="triangle"></div>
         <header>
-          <div v-for="contextItem in props.items" :key="contextItem.label">
+          <div v-for="contextItem in menuOptions" :key="contextItem.label">
             <div
               class="item"
               :class="{ disabled: contextItem.disabled }"
               @mousedown.prevent
-              @click="handleItemClick(contextItem)"
+              @click="invokeOption(contextItem)"
             >
               <span class="icon">{{ contextItem.icon }}</span>
               <span class="label">{{ contextItem.label }}</span>
             </div>
           </div>
         </header>
-        <footer>
+        <footer v-if="menuDetails.length">
           <div class="descriptions">
-            <span v-for="info in details" :key="info">{{ info }}.</span>
+            <span v-for="info in menuDetails" :key="info">{{ info }}.</span>
           </div>
         </footer>
       </div>
@@ -63,34 +64,31 @@ function handleItemClick(item: ContextMenuItem) {
 
 <style lang="scss" scoped>
 .context-menu {
-  position: fixed;
-  user-select: none;
-
   display: flex;
+  position: fixed;
   flex-direction: column;
 
-  background-color: $cloud-white;
-  border-radius: 12px;
-
-  filter: drop-shadow(0px 0px 10px #bbbbbb4d) drop-shadow(5px 5px 0px $shadow);
-  backdrop-filter: blur(2px);
-
-  min-width: 220px;
-  padding: 7px 6px 10px 6px;
-
   z-index: 9999;
+  backdrop-filter: blur(2px);
+  filter: drop-shadow(0px 0px 10px #bbbbbb4d) drop-shadow(5px 5px 0px $shadow);
+
+  border-radius: 12px;
+  background-color: $cloud-white;
+
+  padding: 7px 6px 10px 6px;
+  min-width: 220px;
+
+  user-select: none;
 
   header {
     display: flex;
     flex-direction: column;
-
     gap: 2px;
 
     .item {
-      cursor: pointer;
-
       display: flex;
       align-items: center;
+      cursor: pointer;
 
       border-radius: 8px;
 
@@ -99,10 +97,10 @@ function handleItemClick(item: ContextMenuItem) {
       .icon {
         @include iconize-text;
 
-        color: $shadow;
-
-        margin-left: 8px;
         margin-right: 12px;
+        margin-left: 8px;
+
+        color: $shadow;
 
         font-size: 21px;
         line-height: 0.8;
@@ -128,13 +126,12 @@ function handleItemClick(item: ContextMenuItem) {
     .descriptions {
       display: flex;
       flex-direction: column;
-
       gap: 3px;
-
-      color: $gray-font;
 
       margin-top: 6px;
       margin-left: 10px;
+
+      color: $gray-font;
 
       font-size: 15px;
     }
@@ -144,9 +141,11 @@ function handleItemClick(item: ContextMenuItem) {
 .triangle {
   display: block;
   position: absolute;
+
+  background-color: transparent;
+
   width: 0;
   height: 0;
-  background-color: transparent;
 }
 
 @mixin triangle-corner($v, $h) {
@@ -163,30 +162,30 @@ function handleItemClick(item: ContextMenuItem) {
   }
 }
 
-.triangle-left-top {
+.triangle-top-left {
   border-top-left-radius: 0 !important;
   @include triangle-corner(top, left);
 }
-.triangle-right-top {
+.triangle-top-right {
   border-top-right-radius: 0 !important;
   @include triangle-corner(top, right);
 }
-.triangle-left-bottom {
+.triangle-bottom-left {
   border-bottom-left-radius: 0 !important;
   @include triangle-corner(bottom, left);
 }
-.triangle-right-bottom {
+.triangle-bottom-right {
   border-bottom-right-radius: 0 !important;
   @include triangle-corner(bottom, right);
 }
 
 .context-fade-enter-active,
 .context-fade-leave-active {
-  transition: all 0.18s ease;
+  transition: all 0.2s ease;
 }
 .context-fade-enter-from,
 .context-fade-leave-to {
-  opacity: 0%;
   transform: scale(0.97);
+  opacity: 0%;
 }
 </style>

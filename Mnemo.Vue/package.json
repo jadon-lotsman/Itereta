@@ -15,6 +15,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "@vueuse/core": "^14.4.0",
     "date-fns": "^4.4.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.32",

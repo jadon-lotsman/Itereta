@@ -1,97 +1,88 @@
-import type { ContextMenuItem } from '@/features/contextMenu/types/ContextMenuItem'
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import type { ContextMenuOption } from '@/features/contextMenu/types/ContextMenuOption'
+import { ref, nextTick } from 'vue'
 import { useActiveInput } from '@/shared/composables/useActiveInput.ts'
 import { useSelection } from '@/shared/composables/useSelection.ts'
+import { useEventListener } from '@vueuse/core'
+
+const MENU_WIDTH = 220
+const MENU_OFFSET = 12
+const MENU_PADDING = 10
+const MENU_ITEM_HEIGHT = 30
+
+const anchorX = ref<number>(0)
+const anchorY = ref<number>(0)
+const isVisible = ref<boolean>(false)
+const isLeftAligned = ref<boolean>(false)
+const isTopAligned = ref<boolean>(false)
+
+const menuOptions = ref<ContextMenuOption[]>([])
+const menuDetails = ref<string[]>([])
+
+function getMenuHeight(items: ContextMenuOption[], details: string[]) {
+  return MENU_PADDING + (items.length + details.length) * MENU_ITEM_HEIGHT
+}
 
 export function useContextMenu() {
-  const isOpen = ref<boolean>(false)
-  const isXOffsetted = ref<boolean>(false)
-  const isYOffsetted = ref<boolean>(false)
-  const anchorX = ref<number>(0)
-  const anchorY = ref<number>(0)
+  const { hasActiveInput } = useActiveInput()
+  const { hasSelection } = useSelection()
 
-  const menuItems = ref<ContextMenuItem[]>([])
-  const menuDetails = ref<string[]>([])
-
-  const inputChecker = useActiveInput()
-  const selectionChecker = useSelection()
-
-  const MENU_WIDTH = 220
-  const MENU_OFFSET = 12
-
-  const MENU_ITEM_HEIGHT = 30
-
-  async function openContext(event: MouseEvent, items: ContextMenuItem[], details: string[]) {
-    if (inputChecker.hasActiveInput.value || selectionChecker.hasSelection.value) return
-
+  async function openMenu(event: MouseEvent, items: ContextMenuOption[], details: string[]) {
+    if (hasActiveInput.value || hasSelection.value) return
     event.preventDefault()
     event.stopPropagation()
 
-    isOpen.value = false
+    // Next tick to playing animation
+    isVisible.value = false
     await nextTick()
-    isOpen.value = true
+    isVisible.value = true
 
-    menuItems.value = items
+    const MENU_HEIGHT = getMenuHeight(items, details)
+
+    menuOptions.value = items
     menuDetails.value = details
-
-    const MENU_HEIGHT = 10 + (menuItems.value.length + menuDetails.value.length) * MENU_ITEM_HEIGHT
 
     const cursorX = event.clientX
     const cursorY = event.clientY
     const borderX = window.innerWidth - MENU_WIDTH
     const borderY = window.innerHeight - MENU_HEIGHT
 
-    isXOffsetted.value = cursorX > borderX
-    isYOffsetted.value = cursorY > borderY
-    anchorX.value = isXOffsetted.value ? cursorX - MENU_WIDTH - MENU_OFFSET : cursorX + MENU_OFFSET
-    anchorY.value = isYOffsetted.value ? cursorY - MENU_HEIGHT : cursorY
+    isLeftAligned.value = cursorX > borderX
+    isTopAligned.value = cursorY > borderY
+    anchorX.value = isLeftAligned.value ? cursorX - MENU_WIDTH - MENU_OFFSET : cursorX + MENU_OFFSET
+    anchorY.value = isTopAligned.value ? cursorY - MENU_HEIGHT : cursorY
   }
 
-  async function closeContext() {
-    isOpen.value = false
-    menuItems.value = []
+  function closeMenu() {
+    if (!isVisible.value) return
+
+    isVisible.value = false
+    menuOptions.value = []
     menuDetails.value = []
   }
 
-  async function handleGlobalClick(event: MouseEvent) {
-    if (!isOpen.value) return
+  useEventListener(window, 'click', handleOutsideClick)
+  useEventListener(window, 'contextmenu', handleOutsideClick)
+  useEventListener(window, 'keydown', handleEscape)
+  useEventListener(window, 'scroll', closeMenu)
 
-    const menuElement = document.querySelector('.context-menu')
-    if (menuElement && !menuElement.contains(event.target as Node)) {
-      event.preventDefault()
-      closeContext()
-    }
+  function handleOutsideClick(event: MouseEvent) {
+    const menu = document.querySelector('.context-menu')
+    if (menu && !menu.contains(event.target as Node)) closeMenu()
   }
 
-  async function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape' && isOpen.value) {
-      closeContext()
-    }
+  function handleEscape(event: KeyboardEvent) {
+    if (event.key === 'Escape') closeMenu()
   }
-
-  onMounted(() => {
-    window.addEventListener('click', handleGlobalClick)
-    window.addEventListener('scroll', closeContext)
-    window.addEventListener('contextmenu', handleGlobalClick)
-    window.addEventListener('keydown', handleKeydown)
-  })
-
-  onUnmounted(() => {
-    window.removeEventListener('click', handleGlobalClick)
-    window.removeEventListener('scroll', closeContext)
-    window.removeEventListener('contextmenu', handleGlobalClick)
-    window.removeEventListener('keydown', handleKeydown)
-  })
 
   return {
-    isOpen,
-    isXOffsetted,
-    isYOffsetted,
     anchorX,
     anchorY,
-    menuItems,
+    isVisible,
+    isLeftAligned,
+    isTopAligned,
+    menuOptions,
     menuDetails,
-    openContext,
-    closeContext,
+    openMenu,
+    closeMenu,
   }
 }
