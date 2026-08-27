@@ -88,7 +88,7 @@ defineEmits<{
     font-size: 14px;
     font-weight: 400;
 
-    max-width: 80%;
+    max-width: 90%;
   }
 
   input:checked + .title::after {

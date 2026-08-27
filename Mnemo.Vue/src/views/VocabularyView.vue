@@ -46,11 +46,11 @@ button {
   @include iconize-text;
   @include lift();
 
-  color: $shadow;
-  background-color: $cloud-white;
-
   position: fixed;
   top: 5px;
   left: 5px;
+  background-color: $cloud-white;
+
+  color: $shadow;
 }
 </style>

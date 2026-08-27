@@ -5,11 +5,11 @@ import { useRepetitionStore } from '../stores/RepetitionStore.ts'
 import router from '@/router/index.ts'
 import { useCalendarStore } from '@/features/calendar/stores/CalendarStore.ts'
 import { ROUTE_NAMES } from '@/shared/constants/RouteConst.ts'
-import { useLoadingPlaceholer } from '@/shared/composables/useLoadingPlaceholder.ts'
+import { useLoadingPlaceholder } from '@/shared/composables/useLoadingPlaceholder.ts'
 
 const calendar = useCalendarStore()
 const repetition = useRepetitionStore()
-const loadingPlaceholder = useLoadingPlaceholer()
+const loadingPlaceholder = useLoadingPlaceholder()
 
 const tasks = computed(() => repetition.tasks)
 const buttonText = computed(() =>

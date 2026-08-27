@@ -5,12 +5,12 @@ import { useNotify } from '@/shared/composables/useNotify'
 import { apiRequest } from '@/shared/utils/ApiRequest'
 import CollapsibleSection from '@/shared/components/CollapsibleSection.vue'
 import { ROUTE_NAMES } from '@/shared/constants/RouteConst'
-import { useLoadingPlaceholer } from '@/shared/composables/useLoadingPlaceholder'
+import { useLoadingPlaceholder } from '@/shared/composables/useLoadingPlaceholder'
 
 const route = useRoute()
 const router = useRouter()
 const notify = useNotify()
-const loadingPlaceholder = useLoadingPlaceholer()
+const loadingPlaceholder = useLoadingPlaceholder()
 
 const username = ref<string>('')
 const buttonText = computed(() => (loadingPlaceholder.showSkeleton.value ? 'Logining...' : 'Login'))

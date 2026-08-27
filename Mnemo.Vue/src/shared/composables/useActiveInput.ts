@@ -1,32 +1,25 @@
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useEventListener } from '@vueuse/core'
+import { ref, computed } from 'vue'
 
 const activeInput = ref<HTMLInputElement | HTMLTextAreaElement | null>(null)
 const hasActiveInput = computed(() => activeInput.value != null)
 
 export function useActiveInput() {
-  const handleFocus = (event: FocusEvent) => {
+  function handleFocus(event: FocusEvent) {
     const target = event.target as HTMLInputElement | HTMLTextAreaElement
-    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA'))
       activeInput.value = target
-    }
   }
 
-  const handleBlur = () => {
+  function handleBlur() {
     activeInput.value = null
   }
 
-  onMounted(() => {
-    document.addEventListener('focusin', handleFocus)
-    document.addEventListener('focusout', handleBlur)
-  })
-
-  onUnmounted(() => {
-    document.removeEventListener('focusin', handleFocus)
-    document.removeEventListener('focusout', handleBlur)
-  })
+  useEventListener('focusin', handleFocus)
+  useEventListener('focusout', handleBlur)
 
   return {
-    activeInput,
     hasActiveInput,
+    activeInput,
   }
 }

@@ -1,34 +1,19 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { useEventListener } from '@vueuse/core'
+import { onMounted, ref } from 'vue'
 
 export function useSelection() {
-  const hasSelection = ref(false)
-  const selectedText = ref('')
+  const hasSelection = ref<boolean>(false)
+  const selectedText = ref<string>('')
 
-  const updateSelection = () => {
-    const selection = window.getSelection()
-    const text = selection?.toString()?.trim() || ''
+  function updateSelection() {
+    const text = window.getSelection()?.toString().trim() ?? ''
     selectedText.value = text
     hasSelection.value = text.length > 0
   }
 
-  const handleSelectionChange = () => {
-    updateSelection()
-  }
-
-  const handleMouseUp = () => {
-    setTimeout(updateSelection, 0)
-  }
-
-  onMounted(() => {
-    document.addEventListener('selectionchange', handleSelectionChange)
-    document.addEventListener('mouseup', handleMouseUp)
-    updateSelection()
-  })
-
-  onUnmounted(() => {
-    document.removeEventListener('selectionchange', handleSelectionChange)
-    document.removeEventListener('mouseup', handleMouseUp)
-  })
+  onMounted(() => updateSelection())
+  useEventListener('selectionchange', updateSelection)
+  useEventListener('mouseup', updateSelection)
 
   return {
     hasSelection,

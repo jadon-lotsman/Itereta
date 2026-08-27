@@ -5,13 +5,13 @@ import router from '@/router'
 import { useRepetitionStore } from '@/features/repetition/stores/RepetitionStore'
 import { ROUTE_NAMES } from '@/shared/constants/RouteConst'
 import { useNotify } from '@/shared/composables/useNotify'
-import { useLoadingPlaceholer } from '@/shared/composables/useLoadingPlaceholder'
+import { useLoadingPlaceholder } from '@/shared/composables/useLoadingPlaceholder'
 
 const notify = useNotify()
 const repetition = useRepetitionStore()
-const loadingPlaceholder = useLoadingPlaceholer()
+const loadingPlaceholder = useLoadingPlaceholder()
 
-const selectedMode = ref<string>('fast')
+const selectedMode = ref<string>('planned')
 const buttonText = computed(() =>
   loadingPlaceholder.showSkeleton.value ? 'Generate tasks...' : 'Start',
 )
@@ -50,13 +50,13 @@ async function onStart() {
         v-model="selectedMode"
         value="fast"
         title="Fast repetition"
-        description="Random words without save results"
+        description="Random entries - no interval changes"
       />
       <RadioItem
         v-model="selectedMode"
         value="planned"
         title="Planned at today"
-        description="Planned words with save results"
+        description="Planned entries that update your intervals"
       />
     </div>
 
