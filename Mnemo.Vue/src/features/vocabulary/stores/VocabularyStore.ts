@@ -11,7 +11,7 @@ import type {
   VocabularySector,
   VocabularyStatistics,
 } from '../types/VocabularySector'
-import { useLoadingPlaceholer } from '@/shared/composables/useLoadingPlaceholder'
+import { useLoadingPlaceholder } from '@/shared/composables/useLoadingPlaceholder'
 
 export const useVocabularyStore = defineStore('vocabulary', () => {
   const entries = ref<VocabularyEntry[]>([])
@@ -23,7 +23,7 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
   const totalEntries = ref<number>(0)
   const totalTranslations = ref<number>(0)
 
-  const loadingPlaceholder = useLoadingPlaceholer()
+  const loadingPlaceholder = useLoadingPlaceholder()
 
   async function fetchPage(
     startWord: string,

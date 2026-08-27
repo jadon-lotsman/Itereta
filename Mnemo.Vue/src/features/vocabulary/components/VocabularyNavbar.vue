@@ -69,21 +69,21 @@ function submitSector(startWord: string, endWord: string) {
 <style lang="scss" scoped>
 .navbar {
   display: flex;
-  user-select: none;
 
   gap: 8px;
 
   margin-bottom: 15px;
+  user-select: none;
 
   .tablet-button,
   .tablet-radio {
-    color: $shadow;
     background-color: $plane-white;
 
     padding: 3px 9px 3px 9px;
 
     min-width: 35px;
     height: 26px;
+    color: $shadow;
 
     text-align: center;
     white-space: nowrap;
@@ -91,13 +91,13 @@ function submitSector(startWord: string, endWord: string) {
 
   .tablet-button {
     position: relative;
+    flex-grow: 0;
+
+    flex-shrink: 0;
 
     background-color: $plane-gray;
 
     width: 45px;
-
-    flex-shrink: 0;
-    flex-grow: 0;
 
     span {
       @include iconize-text;

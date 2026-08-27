@@ -12,15 +12,14 @@ import type {
 import ItemSkeleton from './VocabularyItem/ItemSkeleton.vue'
 import { useNotify } from '@/shared/composables/useNotify.ts'
 import { useContextMenu } from '@/shared/composables/useContextMenu.ts'
-import ContextMenu from '@/features/contextMenu/components/ContextMenu.vue'
-import type { ContextMenuItem } from '@/features/contextMenu/types/ContextMenuItem.ts'
+import type { ContextMenuOption } from '@/features/contextMenu/types/ContextMenuOption.ts'
 import { format } from 'date-fns'
 import VocabularyNavbar from './VocabularyNavbar.vue'
 
 const notify = useNotify()
 const vocabulary = useVocabularyStore()
 
-const contextMenu = useContextMenu()
+const { openMenu } = useContextMenu()
 
 const templateEntry = ref<VocabularyEntry>()
 const searched = ref<VocabularyEntry[]>([])
@@ -107,7 +106,7 @@ async function onEntryDelete(id: number) {
 async function openContextMenu(event: MouseEvent, entry: VocabularyEntry) {
   if (entry.id < 0) return
 
-  const menuItems: ContextMenuItem[] = [
+  const menuOptions: ContextMenuOption[] = [
     // {
     //   label: 'Pin/Unpin',
     //   icon: 'keep',
@@ -128,7 +127,7 @@ async function openContextMenu(event: MouseEvent, entry: VocabularyEntry) {
   const creatingDate = format(new Date(entry.createdAt), 'd MMM, yyyy')
   const menuDescriptions: string[] = [`Created at ${creatingDate}`]
 
-  contextMenu.openContext(event, menuItems, menuDescriptions)
+  await openMenu(event, menuOptions, menuDescriptions)
 }
 
 async function setupObserver() {
@@ -220,17 +219,6 @@ watch(triggerRef, (newVal) => {
         >Loading entries...</span
       >
     </div>
-
-    <ContextMenu
-      :is-open="contextMenu.isOpen.value"
-      :pos-x="contextMenu.anchorX.value"
-      :pos-y="contextMenu.anchorY.value"
-      :is-x-offsetted="contextMenu.isXOffsetted.value"
-      :is-y-offsetted="contextMenu.isYOffsetted.value"
-      :items="contextMenu.menuItems.value"
-      :details="contextMenu.menuDetails.value"
-      @close="contextMenu.closeContext"
-    />
   </div>
 </template>
 
@@ -241,10 +229,10 @@ watch(triggerRef, (newVal) => {
   .more-placeholder {
     display: block;
 
-    color: $gray-font;
-
     padding-top: 5px;
     padding-bottom: 30px;
+
+    color: $gray-font;
 
     text-align: center;
   }

@@ -9,7 +9,7 @@ import EditableField from './EditableField.vue'
 import EditableList from './EditableList.vue'
 import EditableSelect from './EditableSelect.vue'
 import { PART_OF_SPEECH_OPTIONS } from '@/shared/constants/PartOfSpeech.ts'
-import { useAudioStore } from '../../stores/AudioStore.ts'
+import { useAudioStore } from '../../../../shared/composables/useAudio.ts'
 import { useSelection } from '@/shared/composables/useSelection.ts'
 
 const audio = useAudioStore()
@@ -26,7 +26,7 @@ const emits = defineEmits<{
 }>()
 
 const audioTitle = computed(() => {
-  const parts = props.entry.transcriptionAudioUrl?.split('/')
+  const parts = props.entry.audioUrl?.split('/')
   return parts != null ? parts[parts.length - 1] : null
 })
 
@@ -79,8 +79,8 @@ function switchEditing() {
 
 function toggleAudio(url: string) {
   if (!url) return
-  if (audio.isPlayingThis(url)) audio.stop()
-  else audio.play(url)
+  if (audio.isPlayingThis(url)) audio.stopAudio()
+  else audio.playAudio(url)
 }
 
 function saveChanges() {
@@ -149,13 +149,13 @@ function saveChanges() {
             :is-editor-mode="isEditorMode"
           />
           <button
-            v-if="entry.transcriptionAudioUrl && !isEditorMode"
+            v-if="entry.audioUrl && !isEditorMode"
             type="button"
             class="audio-button"
             :title="audioTitle ?? ''"
-            @click.stop="toggleAudio(entry.transcriptionAudioUrl)"
+            @click.stop="toggleAudio(entry.audioUrl)"
           >
-            {{ audio.isPlayingThis(entry.transcriptionAudioUrl) ? 'volume_up' : 'volume_down' }}
+            {{ audio.isPlayingThis(entry.audioUrl) ? 'volume_up' : 'volume_down' }}
           </button>
         </span>
       </div>
@@ -192,8 +192,6 @@ function saveChanges() {
 
 <style lang="scss" scoped>
 .entry {
-  cursor: default;
-
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -201,31 +199,32 @@ function saveChanges() {
   transition:
     transform 0.2s,
     box-shadow 0.2s ease;
-
-  color: $black-font;
-  background-color: $plane-gray;
+  cursor: default;
+  margin-bottom: 20px;
   box-shadow: 5px 5px 0px $shadow;
+  border-radius: 12px;
+  background-color: $plane-gray;
+  min-width: 370px;
 
   max-width: 470px;
-  min-width: 370px;
-  border-radius: 12px;
-  margin-bottom: 20px;
+
+  color: $black-font;
 
   font-size: 16px;
 
   &.editor-mode {
-    box-shadow: 8px 8px 0px $shadow;
     transform: translateY(-3px);
+    box-shadow: 8px 8px 0px $shadow;
   }
 
   header {
     display: grid;
     grid-template-columns: 30% 30% auto auto;
+
+    border-radius: 12px;
     background-color: $plane-white;
 
     padding: 10px 15px;
-
-    border-radius: 12px;
 
     .foreign {
       grid-column: 1;
@@ -236,35 +235,34 @@ function saveChanges() {
 
       .speech-container {
         display: inline-flex;
+        flex-wrap: nowrap;
         justify-content: start;
         align-items: start;
-        flex-wrap: nowrap;
+        gap: 2px;
 
         margin-right: 4px;
-        gap: 2px;
 
         .audio-button {
           @include iconize-text;
 
-          color: $shadow;
-          background-color: inherit;
+          opacity: 65%;
 
           box-shadow: none;
+          background-color: inherit;
 
           padding: 0px;
 
-          opacity: 65%;
+          color: $shadow;
+          font-size: 24px;
 
           line-height: 0.8;
-          font-size: 24px;
         }
       }
     }
 
     .translations {
-      grid-column: 3;
-
       display: flex;
+      grid-column: 3;
       flex-direction: column;
 
       margin-top: -2px;
@@ -285,13 +283,13 @@ function saveChanges() {
     grid-template-columns: auto 40% auto;
 
     .foreign {
-      grid-column: 1;
       grid-row: 1;
+      grid-column: 1;
     }
 
     .transcription {
-      grid-column: 1;
       grid-row: 1;
+      grid-column: 1;
 
       margin: 0px;
       margin-top: 28px;
@@ -303,13 +301,13 @@ function saveChanges() {
     }
 
     .translations {
-      grid-column: 2;
       grid-row: 1/3;
+      grid-column: 2;
     }
 
     .part-of-speech {
-      grid-column: 3;
       grid-row: 1;
+      grid-column: 3;
 
       justify-self: end;
     }
@@ -324,8 +322,8 @@ function saveChanges() {
   }
 
   &.editor-mode footer {
-    padding-bottom: 5px;
     padding-top: 5px;
+    padding-bottom: 5px;
 
     ol {
       margin-top: 10px;

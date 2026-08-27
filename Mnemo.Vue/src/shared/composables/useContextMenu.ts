@@ -1,5 +1,5 @@
 import type { ContextMenuOption } from '@/features/contextMenu/types/ContextMenuOption'
-import { ref, nextTick } from 'vue'
+import { ref } from 'vue'
 import { useActiveInput } from '@/shared/composables/useActiveInput.ts'
 import { useSelection } from '@/shared/composables/useSelection.ts'
 import { useEventListener } from '@vueuse/core'
@@ -8,6 +8,7 @@ const MENU_WIDTH = 220
 const MENU_OFFSET = 12
 const MENU_PADDING = 10
 const MENU_ITEM_HEIGHT = 30
+const MENU_FADE_DELAY = 120
 
 const anchorX = ref<number>(0)
 const anchorY = ref<number>(0)
@@ -31,33 +32,32 @@ export function useContextMenu() {
     event.preventDefault()
     event.stopPropagation()
 
-    // Next tick to playing animation
+    const wasOpened = isVisible.value
     isVisible.value = false
-    await nextTick()
-    isVisible.value = true
+    await setTimeout(() => (isVisible.value = true), wasOpened ? MENU_FADE_DELAY : 0)
 
     const MENU_HEIGHT = getMenuHeight(items, details)
 
     menuOptions.value = items
     menuDetails.value = details
 
-    const cursorX = event.clientX
-    const cursorY = event.clientY
+    const cursorX = event.pageX
+    const cursorY = event.pageY
     const borderX = window.innerWidth - MENU_WIDTH
     const borderY = window.innerHeight - MENU_HEIGHT
 
-    isLeftAligned.value = cursorX > borderX
-    isTopAligned.value = cursorY > borderY
+    isLeftAligned.value = event.clientX > borderX
+    isTopAligned.value = event.clientY > borderY
     anchorX.value = isLeftAligned.value ? cursorX - MENU_WIDTH - MENU_OFFSET : cursorX + MENU_OFFSET
     anchorY.value = isTopAligned.value ? cursorY - MENU_HEIGHT : cursorY
   }
 
   function closeMenu() {
-    if (!isVisible.value) return
-
-    isVisible.value = false
-    menuOptions.value = []
-    menuDetails.value = []
+    if (isVisible.value) {
+      isVisible.value = false
+      menuOptions.value = []
+      menuDetails.value = []
+    }
   }
 
   useEventListener(window, 'click', handleOutsideClick)

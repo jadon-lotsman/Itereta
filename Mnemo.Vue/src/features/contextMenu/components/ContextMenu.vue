@@ -65,7 +65,7 @@ function invokeOption(item: ContextMenuOption) {
 <style lang="scss" scoped>
 .context-menu {
   display: flex;
-  position: fixed;
+  position: absolute;
   flex-direction: column;
 
   z-index: 9999;
@@ -181,7 +181,7 @@ function invokeOption(item: ContextMenuOption) {
 
 .context-fade-enter-active,
 .context-fade-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
 }
 .context-fade-enter-from,
 .context-fade-leave-to {
