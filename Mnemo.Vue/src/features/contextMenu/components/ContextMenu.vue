@@ -5,8 +5,8 @@ import { computed } from 'vue'
 
 const {
   isVisible,
-  anchorX,
-  anchorY,
+  menuX,
+  menuY,
   isLeftAligned,
   isTopAligned,
   menuOptions,
@@ -35,7 +35,7 @@ function invokeOption(item: ContextMenuOption) {
         v-if="isVisible"
         class="context-menu"
         :class="triangleClass"
-        :style="{ top: anchorY + 'px', left: anchorX + 'px' }"
+        :style="{ top: menuY + 'px', left: menuX + 'px' }"
         @click.stop
       >
         <div class="triangle"></div>
@@ -69,8 +69,11 @@ function invokeOption(item: ContextMenuOption) {
   flex-direction: column;
 
   z-index: 9999;
+
   backdrop-filter: blur(2px);
-  filter: drop-shadow(0px 0px 10px #bbbbbb4d) drop-shadow(5px 5px 0px $shadow);
+  filter: drop-shadow(0px 0px 8px #bbbbbb4d) drop-shadow(5px 5px 0px $shadow);
+
+  will-change: transform, opacity;
 
   border-radius: 12px;
   background-color: $cloud-white;
@@ -179,9 +182,11 @@ function invokeOption(item: ContextMenuOption) {
   @include triangle-corner(bottom, right);
 }
 
-.context-fade-enter-active,
-.context-fade-leave-active {
+.context-fade-enter-active {
   transition: all 0.18s ease;
+}
+.context-fade-leave-active {
+  transition: all 0.28s ease;
 }
 .context-fade-enter-from,
 .context-fade-leave-to {

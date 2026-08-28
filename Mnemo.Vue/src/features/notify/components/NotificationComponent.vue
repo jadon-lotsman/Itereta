@@ -20,38 +20,37 @@ const store = useNotificationStore()
 <style lang="scss" scoped>
 .notification-container {
   position: fixed;
-  left: 0;
   bottom: 20px;
+  left: 0;
 
-  pointer-events: none;
+  z-index: 9998;
 
   width: 100%;
 
-  z-index: 9998;
+  pointer-events: none;
 }
 
 .notifications-list {
   display: flex;
-  justify-content: end;
   flex-direction: column;
+  justify-content: end;
 
   gap: 10px;
+  margin: 0px auto;
 
   max-width: $layoutWidth;
-  margin: 0px auto;
 }
 
-.notification-enter-active,
-.notification-leave-active {
+.notification-enter-active {
   transition: all 0.18s ease;
 }
-.notification-enter-from {
-  opacity: 0%;
-  transform: scale(0.97);
+.notification-leave-active {
+  transition: all 0.28s ease;
 }
+.notification-enter-from,
 .notification-leave-to {
-  opacity: 0%;
   transform: scale(0.97);
+  opacity: 0%;
 }
 .notification-move {
   transition: transform 0.3s cubic-bezier(0.3, 0.9, 0.2, 1.1);

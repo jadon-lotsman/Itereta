@@ -29,46 +29,48 @@ function close() {
 
 <style lang="scss" scoped>
 .notification {
-  position: relative;
-
   display: flex;
+  position: relative;
   align-items: start;
 
-  pointer-events: all;
+  backdrop-filter: blur(2px);
+  filter: drop-shadow(0px 0px 8px #bbbbbb4d);
+
+  will-change: transform, opacity;
+
+  margin-right: 12px;
+  margin-left: 15px;
 
   box-shadow: 5px 5px 0px $shadow;
-
   border-radius: 0px 12px 12px 12px;
+
   background-color: $cloud-white;
 
-  filter: drop-shadow(0px 0px 8px #bbbbbb4d);
-  backdrop-filter: blur(2px);
-
-  margin-left: 15px;
-  margin-right: 12px;
-
-  max-width: $layoutWidth;
-  width: fit-content;
-  max-width: 400px;
-  min-width: 250px;
   padding: 10px 15px;
   padding-right: 25px;
 
+  width: fit-content;
+  min-width: 250px;
+  max-width: $layoutWidth;
+
+  pointer-events: all;
+
   &::after {
-    content: '';
-
     position: absolute;
-
-    width: 0;
-    height: 0;
-    border: 8px solid transparent;
-    border-top: 8px solid $cloud-white;
-    border-right: 8px solid $cloud-white;
 
     top: 0px;
     left: -12px;
 
+    border: 8px solid transparent;
+    border-top: 8px solid $cloud-white;
+    border-right: 8px solid $cloud-white;
+
     background-color: transparent;
+
+    width: 0;
+    height: 0;
+
+    content: '';
   }
 
   .icon {
@@ -78,10 +80,10 @@ function close() {
 
     opacity: 85%;
 
-    color: $shadow;
-
-    margin-right: 12px;
     margin-top: 5px;
+    margin-right: 12px;
+
+    color: $shadow;
 
     font-size: 32px;
   }
@@ -95,9 +97,9 @@ function close() {
   .description {
     display: block;
 
-    color: $gray-font;
-
     margin-top: 3px;
+
+    color: $gray-font;
 
     font-size: 15px;
   }
