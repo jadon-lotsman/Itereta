@@ -51,7 +51,13 @@ onMounted(() => {
 <template>
   <CollapsibleSection title="Login">
     <form @submit.prevent="login">
-      <input class="input" type="text" placeholder="Username..." v-model="username" />
+      <input
+        class="input"
+        autocapitalize="none"
+        type="text"
+        placeholder="Username..."
+        v-model="username"
+      />
       <button class="big-button" type="submit" :disabled="loadingPlaceholder.isLoading.value">
         {{ buttonText }}
       </button>
@@ -60,10 +66,6 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-input {
-  text-transform: none;
-}
-
 button {
   margin-top: 20px;
 }

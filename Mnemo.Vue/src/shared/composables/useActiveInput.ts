@@ -1,3 +1,4 @@
+import router from '@/router'
 import { useEventListener } from '@vueuse/core'
 import { ref, computed } from 'vue'
 
@@ -17,6 +18,10 @@ export function useActiveInput() {
 
   useEventListener('focusin', handleFocus)
   useEventListener('focusout', handleBlur)
+
+  router.afterEach(() => {
+    activeInput.value = null
+  })
 
   return {
     hasActiveInput,
