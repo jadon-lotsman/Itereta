@@ -1,6 +1,7 @@
-## Well, meet Mnemo
+## What is Mnemo?
 
-Mnemo (pron. "(m)ˈnimə") is a vocabulary tool built on spaced repetition that offers a friendly environment for language learning. It's an independent project, driven by enthusiasm and a genuine desire to provide a pressure-free, self-paced experience.
+Mnemo (pron. "(m)ˈnimə") is a vocabulary tool built on spaced repetition that offers a friendly environment for language learning.
+It's an independent project, driven by enthusiasm and a genuine desire to provide a pressure-free, self-paced experience.
 
 <div align="center">
   <img src="preview.gif" alt="Mnemo entry editor in action" width="450px"/>
@@ -15,6 +16,11 @@ Mnemo (pron. "(m)ˈnimə") is a vocabulary tool built on spaced repetition that 
 - **Progress Tracking:** A visual calendar tells you about planned entries.
 - **Adaptive Exercises:** Mnemo scales the difficulty down, giving you simpler exercises until you're confident again.
 - **Smart Enrichment:** New or edited entries are automatically enhanced with useful translations, examples, or pronunciation data. Your own custom edits are always preserved and never overwritten.
+
+### Upcoming
+
+- **Multi-Language Support:** This requires some codebase refactoring, which is already being rolled out gradually in updates.
+- **Smart Articles:** Each entry will get an article based on its part of speech. Gendered articles (in Spanish, French, German, etc.) will be determined by word endings, which should cover most cases.
 
 ## Getting Started
 
@@ -60,11 +66,11 @@ npm run dev
 
 Mnemo is built as a full-stack application:
 
-- **Frontend:** Vue.js (Composition API), TypeScript, Router, Pinia.
-- **Backend:** C#, ASP.NET Core, Entity Framework Core.
+- **Frontend:** Vue.js (Composition API), TypeScript.
+- **Backend:** C#, ASP.NET Core, EF Core.
 - **Tooling & Validation:** AutoMapper, FluentValidation, JWT Bearer.
-- **Infrastructure:** SQLite with EF migrations, Docker.
-- **External:** Free Dictionary Api to enrichment.
+- **Infrastructure:** Docker, Nginx, SQLite with EF migrations.
+- **External:** Free Dictionary API to enrichment.
 
 Successful architectural solutions, in my opinion:
 
