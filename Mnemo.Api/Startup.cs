@@ -8,6 +8,7 @@ using Mnemo.Data.Queries;
 using Mnemo.Services.AccountService;
 using Mnemo.Services.EnrichmentService;
 using Mnemo.Services.EnrichmentService.ExternalDictionaries;
+using Mnemo.Services.PackService;
 using Mnemo.Services.RepetitionService;
 using Mnemo.Services.RepetitionService.Factories;
 using Mnemo.Services.RepetitionService.Providers.DistractorProviders;
@@ -107,6 +108,7 @@ namespace Mnemo
             services.AddScoped<TaskQueries>();
             services.AddScoped<StateQueries>();
             services.AddScoped<VocabularyQueries>();
+            services.AddScoped<PackQueries>();
 
             // DI Services
             services.AddScoped<AccountManagementService>();
@@ -114,6 +116,7 @@ namespace Mnemo
             services.AddScoped<StateManagementService>();
             services.AddScoped<QualityCalculationService>();
             services.AddScoped<VocabularyManagementService>();
+            services.AddScoped<PackManagementService>();
 
             // DI Enrichment
             services.AddHttpClient<IExternalDictionary, FreeDictionaryApi>();

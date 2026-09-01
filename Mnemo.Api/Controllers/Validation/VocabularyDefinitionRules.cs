@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace Mnemo.Controllers.Validation
 {
-    public static class VocabularyValidatorRules
+    public static class VocabularyDefinitionRules
     {
         private static readonly Regex _foreignRegex = new(
             @"^[\p{L}\s'\-]+$", RegexOptions.Compiled | RegexOptions.IgnoreCase);

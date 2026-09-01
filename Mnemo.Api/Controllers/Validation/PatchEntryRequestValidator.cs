@@ -13,32 +13,32 @@ namespace Mnemo.Controllers.Validation
                 .WithMessage("At least one field must be provided for update");
 
             RuleFor(x => x.PartOfSpeech)
-                .Must(VocabularyValidatorRules.IsValidPartOfSpeech)
+                .Must(VocabularyDefinitionRules.IsValidPartOfSpeech)
                 .When(x => x.PartOfSpeech != null)
                 .WithMessage($"Invalid Part of Speech. Allowed values: {string.Join(", ", Enum.GetNames<PartOfSpeech>())}");
 
             RuleFor(x => x.CEFR)
-                .Must(VocabularyValidatorRules.IsValidCEFRLevel)
+                .Must(VocabularyDefinitionRules.IsValidCEFRLevel)
                 .When(x => x.CEFR != null)
                 .WithMessage($"Invalid CEFR level. Allowed values: {string.Join(", ", Enum.GetNames<CEFRLevel>())}");
 
             RuleFor(x => x.Foreign)
-                .Must(VocabularyValidatorRules.IsValidForeign)
+                .Must(VocabularyDefinitionRules.IsValidForeign)
                 .When(x => x.Foreign != null)
                 .WithMessage("Foreign must contain only letters (no digits or special chars)");
 
             RuleFor(x => x.Transcription)
-                .Must(VocabularyValidatorRules.IsValidTranscription)
+                .Must(VocabularyDefinitionRules.IsValidTranscription)
                 .When(x => x.Transcription != null)
                 .WithMessage("Transcription format is invalid");
 
             RuleForEach(x => x.TranslationsAdd)
-                .Must(VocabularyValidatorRules.IsValidTranslation)
+                .Must(VocabularyDefinitionRules.IsValidTranslation)
                 .When(x => x.TranslationsAdd != null)
                 .WithMessage("Each translation must be valid (no digits, must contain letters)");
 
             RuleForEach(x => x.ExamplesAdd)
-                .Must(VocabularyValidatorRules.IsValidExample)
+                .Must(VocabularyDefinitionRules.IsValidExample)
                 .When(x => x.ExamplesAdd != null)
                 .WithMessage("Example too short or invalid");
         }
