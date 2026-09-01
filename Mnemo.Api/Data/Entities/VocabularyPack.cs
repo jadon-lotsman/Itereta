@@ -28,11 +28,5 @@ namespace Mnemo.Data.Entities
             Guid = Guid.NewGuid();
             PackEntries = new List<VocabularyPackEntry>();
         }
-
-
-        public void RevokeGuid()
-        {
-            Guid = Guid.NewGuid();
-        }
     }
 }

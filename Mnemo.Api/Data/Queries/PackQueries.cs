@@ -27,7 +27,7 @@ namespace Mnemo.Data.Queries
         public async Task<bool> ExistsByGuidAsync(int userId, Guid packGuid)
             => await GetSecuredByGuidQuery(userId, packGuid).AnyAsync();
 
-        public async Task<VocabularyPack?> GetByGuidAsync(int userId, Guid packGuid)
+        public async Task<VocabularyPack?> GetSecuredByGuidAsync(int userId, Guid packGuid)
             => await GetSecuredByGuidQuery(userId, packGuid).FirstOrDefaultAsync();
 
         public async Task<List<VocabularyPack>> GetAllPublicAsync()

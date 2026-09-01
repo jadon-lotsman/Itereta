@@ -43,7 +43,7 @@ namespace Mnemo.Controllers
         [HttpGet("{guid}")]
         public async Task<IActionResult> GetPackByGuid([FromRoute] Guid guid)
         {
-            var pack = await _packQueries.GetByGuidAsync(UserId, guid);
+            var pack = await _packQueries.GetSecuredByGuidAsync(UserId, guid);
 
             if (pack == null)
                 return NotFound();
@@ -58,7 +58,7 @@ namespace Mnemo.Controllers
         {
             var result = await _packService.CreatePackAsync(UserId, request);
 
-            if( !result.IsSuccess)
+            if (!result.IsSuccess)
             {
                 return result.ErrorCode switch
                 {
@@ -70,6 +70,40 @@ namespace Mnemo.Controllers
 
             var packResponse = _mapper.Map<PackResponse>(result.Value);
             return Ok(packResponse);
+        }
+
+        [HttpPost("{guid}")]
+        public async Task<IActionResult> RevokePackGuid(Guid guid)
+        {
+            var result = await _packService.RevokePackGuidAsync(UserId, guid);
+
+            if (!result.IsSuccess)
+            {
+                return result.ErrorCode switch
+                {
+                    ErrorCode.PackNotFound => NotFound(new { message = result.ErrorMessage }),
+                    _ => StatusCode(500, new { message = result.ErrorMessage })
+                };
+            }
+
+            return Ok(new { NewGuid = result.Value });
+        }
+
+        [HttpDelete("{guid}")]
+        public async Task<IActionResult> DeletePack(Guid guid)
+        {
+            var result = await _packService.RemovePackByGuidAsync(UserId, guid);
+
+            if (!result.IsSuccess)
+            {
+                return result.ErrorCode switch
+                {
+                    ErrorCode.PackNotFound => NotFound(new { message = result.ErrorMessage }),
+                    _ => StatusCode(500, new { message = result.ErrorMessage })
+                };
+            }
+
+            return NoContent();
         }
     }
 }

@@ -101,7 +101,7 @@ namespace Mnemo.Services.PackService
         {
             _logger.LogInformation("Attempting to patch a vocabulary pack for user (UserId:{UserId})", userId);
 
-            var currentPack = await _packQueries.GetByGuidAsync(userId, packGuid);
+            var currentPack = await _packQueries.GetSecuredByGuidAsync(userId, packGuid);
             if (currentPack == null)
             {
                 _logger.LogWarning("Pack (Guid:{Guid}) not found for user (UserId:{UserId})", packGuid, userId);
@@ -125,6 +125,43 @@ namespace Mnemo.Services.PackService
 
         //public async Task<MassRequestResult<VocabularyEntry>> ImportFromPackAsync(int userId, Guid packGuid);
 
-        //public async Task<RequestResult<bool>> RemovePackByGuidAsync(int userId, Guid packGuid);
+        public async Task<RequestResult<Guid>> RevokePackGuidAsync(int userId, Guid packGuid)
+        {
+            _logger.LogInformation("Attempting to revoke guid for pack (Guid:{Guid}) for user (UserId:{UserId})", packGuid, userId);
+
+            var currentPack = await _packQueries.GetSecuredByGuidAsync(userId, packGuid);
+            if (currentPack == null)
+            {
+                _logger.LogWarning("Pack (Guid:{Guid}) not found for user (UserId:{UserId})", packGuid, userId);
+                return RequestResult<Guid>.Failure(ErrorCode.PackNotFound);
+            }
+
+
+            var newGuid = Guid.NewGuid();
+            currentPack.Guid = newGuid;
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Successfully revoked guid for pack (Guid:{Guid}) for user (UserId:{UserId})", packGuid, userId);
+
+            return RequestResult<Guid>.Success(newGuid);
+        }
+
+        public async Task<RequestResult<bool>> RemovePackByGuidAsync(int userId, Guid packGuid)
+        {
+            _logger.LogInformation("Attempting to delete pack (Guid:{Guid}) for user (UserId:{UserId})", packGuid, userId);
+
+            var currentPack = await _packQueries.GetSecuredByGuidAsync(userId, packGuid);
+            if (currentPack == null)
+            {
+                _logger.LogWarning("Pack (Guid:{Guid}) not found for user (UserId:{UserId})", packGuid, userId);
+                return RequestResult<bool>.Failure(ErrorCode.PackNotFound);
+            }
+
+
+            _context.Packs.Remove(currentPack);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Successfully deleted pack (Guid:{Guid}) for user (UserId:{UserId})", packGuid, userId);
+
+            return RequestResult<bool>.Success(true);
+        }
     }
 }
