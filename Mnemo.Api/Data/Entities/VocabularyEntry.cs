@@ -39,8 +39,8 @@ namespace Mnemo.Data.Entities
             {
                 Transcription = enrich.Transcription;
 
-                if (AudioUrl == null && enrich.TranscriptionAudioUrl != null)
-                    AudioUrl = enrich.TranscriptionAudioUrl;
+                if (AudioUrl == null && enrich.AudioUrl != null)
+                    AudioUrl = enrich.AudioUrl;
 
                 isEnriched = true;
             }

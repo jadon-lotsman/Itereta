@@ -3,9 +3,9 @@
     public class PatchEntryRequest
     {
         public string? PartOfSpeech { get; set; }
+        public string? CEFR { get; set; }
         public string? Foreign { get; set; }
         public string? Transcription { get; set; }
-        public string? TranscriptionAudioUrl { get; set; }
         public string[]? ExamplesAdd { get; set; }
         public string[]? ExamplesRemove { get; set; }
         public string[]? TranslationsAdd { get; set; }

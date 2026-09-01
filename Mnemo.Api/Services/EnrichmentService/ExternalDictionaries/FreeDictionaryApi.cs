@@ -73,7 +73,7 @@ namespace Mnemo.Services.EnrichmentService.ExternalDictionaries
                 var enrichResponse = new EnrichResponse()
                 {
                     Transcription = phonetic?.Text,
-                    TranscriptionAudioUrl = phonetic?.Audio,
+                    AudioUrl = phonetic?.Audio,
                     Synonyms = meaning?.Synonyms?.ToArray(),
                     Antonyms = meaning?.Antonyms?.ToArray(),
                 };
