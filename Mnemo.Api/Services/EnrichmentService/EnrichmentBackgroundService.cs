@@ -72,11 +72,11 @@ namespace Mnemo.Services.EnrichmentService
                 DateTime threshold = DateTime.UtcNow.AddMinutes(-stuckTimeout);
 
                 int processingResetCount = await context.Database.ExecuteSqlRawAsync(
-                    $"UPDATE \"Entries\" SET \"EnrichmentStatus\" = {pending} " +
+                    $"UPDATE \"VocabularyEntries\" SET \"EnrichmentStatus\" = {pending} " +
                     $"WHERE \"EnrichmentStatus\" = {processing} AND \"LastEnrichmentAt\" < {{0}}", threshold);
 
                 int failedResetCount = await context.Database.ExecuteSqlRawAsync(
-                    $"UPDATE \"Entries\" SET \"EnrichmentStatus\" = {pending} " +
+                    $"UPDATE \"VocabularyEntries\" SET \"EnrichmentStatus\" = {pending} " +
                     $"WHERE \"EnrichmentStatus\" = {failed}");
 
                 if (processingResetCount > 0 || failedResetCount > 0)
@@ -109,7 +109,7 @@ namespace Mnemo.Services.EnrichmentService
 
             try
             {
-                List<int> pendingIds = await context.Entries
+                List<int> pendingIds = await context.VocabularyEntries
                     .Where(e => e.EnrichmentStatus == EnrichmentStatus.Pending)
                     .OrderBy(e => e.Id)
                     .Select(e => e.Id)
@@ -125,7 +125,7 @@ namespace Mnemo.Services.EnrichmentService
                 idsForCapture = string.Join(",", pendingIds);
                 capturedIds = await context.Database
                     .SqlQueryRaw<long>(
-                        $"UPDATE \"Entries\" SET \"EnrichmentStatus\" = {processing}, \"LastEnrichmentAt\" = {{0}} " +
+                        $"UPDATE \"VocabularyEntries\" SET \"EnrichmentStatus\" = {processing}, \"LastEnrichmentAt\" = {{0}} " +
                         $"WHERE \"Id\" IN ({idsForCapture}) AND \"EnrichmentStatus\" = {pending} " +
                         $"RETURNING \"Id\"", now)
                     .ToListAsync(stoppingToken);
@@ -138,7 +138,7 @@ namespace Mnemo.Services.EnrichmentService
                     return;
 
 
-                var entries = await context.Entries
+                var entries = await context.VocabularyEntries
                     .Where(e => capturedIds.Contains(e.Id))
                     .ToListAsync(stoppingToken);
 

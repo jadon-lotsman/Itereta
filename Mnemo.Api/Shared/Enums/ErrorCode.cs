@@ -11,7 +11,7 @@
 
         // 404 NotFound
         UserNotFound,
-        PackNotFound,
+        VocabularyNotFound,
         EntryNotFound,
         StateNotFound,
         TaskNotFound,

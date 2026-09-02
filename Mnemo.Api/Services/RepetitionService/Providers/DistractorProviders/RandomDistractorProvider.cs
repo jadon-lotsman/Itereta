@@ -7,9 +7,9 @@ namespace Mnemo.Services.RepetitionService.Providers.DistractorProviders
 {
     public class RandomDistractorProvider : IDistractorProvider
     {
-        private VocabularyQueries _vocabularyQueries;
+        private VocabularyEntryQueries _vocabularyQueries;
 
-        public RandomDistractorProvider(VocabularyQueries vocabularyQueries)
+        public RandomDistractorProvider(VocabularyEntryQueries vocabularyQueries)
         {
             _vocabularyQueries = vocabularyQueries;
         }
@@ -17,7 +17,7 @@ namespace Mnemo.Services.RepetitionService.Providers.DistractorProviders
         public async Task<List<string>> GetDistractorsAsync(bool isForward, VocabularyEntry baseEntry, int take, params int[] excludeIds)
         {
             var entries = await _vocabularyQueries
-                    .GetByUserIdQuery(baseEntry.UserId)
+                    .GetVocabEntriesByGuidSecuredQuery(baseEntry.Vocabulary.OwnerId, baseEntry.Vocabulary.Guid)
                     .GetRandomEntries(take, excludeIds)
                     .ToListAsync();
 

@@ -7,21 +7,21 @@ using Mnemo.Shared;
 
 namespace Mnemo.Services.Mapping
 {
-    public class VocabularyPackProfile : Profile
+    public class VocabularyProfile : Profile
     {
-        public VocabularyPackProfile()
+        public VocabularyProfile()
         {
-            CreateMap<CreateEntryRequest, VocabularyPackEntry>()
+            CreateMap<CreateEntryRequest, VocabularyEntry>()
                 .IncludeBase<CreateEntryRequest, VocabularyDefinition>();
 
 
-            CreateMap<VocabularyPack, PackResponse>();
+            CreateMap<Vocabulary, VocabularyResponse>();
 
-            CreateMap<CreatePackRequest, VocabularyPack>()
+            CreateMap<CreateVocabularyRequest, Vocabulary>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextNormalizer.NormalizeExample(src.Name)))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextNormalizer.NormalizeExample(src.Description)))
                 .ForMember(dest => dest.Visibility, opt => opt.MapFrom(src => src.Visibility))
-                .ForMember(dest => dest.PackEntries, opt => opt.Ignore());
+                .ForMember(dest => dest.Entries, opt => opt.Ignore());
         }
     }
 }

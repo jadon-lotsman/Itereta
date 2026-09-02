@@ -3,18 +3,18 @@ using Mnemo.Contracts.Pack.Requests;
 
 namespace Mnemo.Controllers.Validation
 {
-    public class CreatePackRequestValidator : AbstractValidator<CreatePackRequest>
+    public class CreateVocabularyRequestValidator : AbstractValidator<CreateVocabularyRequest>
     {
-        public CreatePackRequestValidator()
+        public CreateVocabularyRequestValidator()
         {
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("Pack name is required")
-                .Must(VocabularyPackRules.IsValidName)
+                .Must(VocabularyRules.IsValidName)
                 .WithMessage("Lorem Ipsum Name");
 
             RuleFor(x => x.Description)
                 .NotEmpty().WithMessage("Pack name is required")
-                .Must(VocabularyPackRules.IsValidDescription)
+                .Must(VocabularyRules.IsValidDescription)
                 .WithMessage("Lorem Ipsum Description");
         }
     }

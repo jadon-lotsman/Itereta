@@ -4,6 +4,6 @@ namespace Mnemo.Services.RepetitionService.Strategies
 {
     public interface IRepetitionTaskStrategy
     {
-        Task<List<RepetitionTask>> GetTasksAsync(int userId);
+        Task<List<RepetitionTask>> GetTasksAsync(int userId, Guid vocabGuid);
     }
 }

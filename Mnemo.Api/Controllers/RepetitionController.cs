@@ -52,9 +52,9 @@ namespace Mnemo.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> StartRepetitionSession([FromQuery] string mode)
+        public async Task<IActionResult> StartRepetitionSession([FromQuery] Guid vocabGuid, string mode)
         {
-            var result = await _taskService.StartRepetitionAsync(UserId, mode);
+            var result = await _taskService.StartRepetitionAsync(UserId, vocabGuid, mode);
 
             if (!result.IsSuccess)
             {

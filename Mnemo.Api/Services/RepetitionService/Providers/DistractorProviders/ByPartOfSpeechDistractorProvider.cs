@@ -7,18 +7,18 @@ namespace Mnemo.Services.RepetitionService.Providers.DistractorProviders
 {
     public class ByPartOfSpeechDistractorProvider : IDistractorProvider
     {
-        private VocabularyQueries _vocabularyQueries;
+        private VocabularyEntryQueries _entryQueries;
 
-        public ByPartOfSpeechDistractorProvider(VocabularyQueries vocabularyQueries)
+        public ByPartOfSpeechDistractorProvider(VocabularyEntryQueries entryQueries)
         {
-            _vocabularyQueries = vocabularyQueries;
+            _entryQueries = entryQueries;
         }
 
 
         public async Task<List<string>> GetDistractorsAsync(bool isForward, VocabularyEntry baseEntry, int take, params int[] excludeIds)
         {
-            var entries = await _vocabularyQueries
-                    .GetByUserIdQuery(baseEntry.UserId)
+            var entries = await _entryQueries
+                    .GetVocabEntriesByGuidSecuredQuery(baseEntry.Vocabulary.OwnerId, baseEntry.Vocabulary.Guid)
                     .Where(e => baseEntry.PartOfSpeech != null && e.PartOfSpeech == baseEntry.PartOfSpeech)
                     .GetRandomEntries(take, excludeIds)
                     .ToListAsync();

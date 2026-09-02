@@ -10,9 +10,9 @@ namespace Mnemo.Services.RepetitionService.Factories
         private readonly IOptions<RepetitionOptions> _options;
         private readonly IDistractorProvider _provider;
         private readonly SyllableDistractorProvider _syllable;
-        private readonly VocabularyQueries _vocabularyQueries;
+        private readonly VocabularyEntryQueries _vocabularyQueries;
 
-        public RepetitionTaskFactory(IOptions<RepetitionOptions> options, IDistractorProvider provider, SyllableDistractorProvider syllable, VocabularyQueries vocabularyQueries)
+        public RepetitionTaskFactory(IOptions<RepetitionOptions> options, IDistractorProvider provider, SyllableDistractorProvider syllable, VocabularyEntryQueries vocabularyQueries)
         {
             _options = options;
             _provider = provider;
@@ -23,7 +23,7 @@ namespace Mnemo.Services.RepetitionService.Factories
 
         public async Task<RepetitionTask> CreateByTypeAsync(bool isForward, Type taskType, VocabularyEntry baseEntry, params int[] excludeIds)
         {
-            bool showPartOfSpeechLabel = await _vocabularyQueries.HasAlternativePartOfSpeechAsync(baseEntry.UserId, baseEntry.Foreign, baseEntry.PartOfSpeech) && isForward;
+            bool showPartOfSpeechLabel = await _vocabularyQueries.HasAlternativePartOfSpeechAsync(baseEntry.Vocabulary.OwnerId, baseEntry.Vocabulary.Guid, baseEntry.Foreign, baseEntry.PartOfSpeech) && isForward;
 
 
             if (taskType == typeof(OptionRepetitionTask))
@@ -74,7 +74,7 @@ namespace Mnemo.Services.RepetitionService.Factories
 
             var correct = isForward ? baseEntry.Translations : [baseEntry.Foreign];
 
-            return new TextRepetitionTask(prompt, partOfSpeech, baseEntry.UserId, baseEntry.Id, correct);
+            return new TextRepetitionTask(prompt, partOfSpeech, baseEntry.Vocabulary.OwnerId, baseEntry.Id, correct);
         }
 
         public OptionRepetitionTask CreateOptionsTask(bool isForward, bool showPartOfSpeechLabel, VocabularyEntry baseEntry, List<string> distractors)
@@ -84,7 +84,7 @@ namespace Mnemo.Services.RepetitionService.Factories
 
             var correct = isForward ? baseEntry.Translations[0] : baseEntry.Foreign;
 
-            return new OptionRepetitionTask(prompt, partOfSpeech, baseEntry.UserId, baseEntry.Id, distractors, correct);
+            return new OptionRepetitionTask(prompt, partOfSpeech, baseEntry.Vocabulary.OwnerId, baseEntry.Id, distractors, correct);
         }
 
         public SentenceReorderRepetitionTask CreateSentenceReorderTask(VocabularyEntry baseEntry, List<string> sentences)
@@ -92,7 +92,7 @@ namespace Mnemo.Services.RepetitionService.Factories
             int index = Random.Shared.Next(sentences.Count);
             var sentence = sentences[index];
 
-            return new SentenceReorderRepetitionTask(baseEntry.UserId, baseEntry.Id, sentence);
+            return new SentenceReorderRepetitionTask(baseEntry.Vocabulary.OwnerId, baseEntry.Id, sentence);
         }
 
         public SyllableReorderRepetitionTask CreateSyllableReorderTask(bool showPartOfSpeechLabel, VocabularyEntry baseEntry, List<string> distractors)
@@ -100,7 +100,7 @@ namespace Mnemo.Services.RepetitionService.Factories
             var foreign = baseEntry.Foreign;
             var partOfSpeech = showPartOfSpeechLabel ? baseEntry.PartOfSpeech : null;
 
-            return new SyllableReorderRepetitionTask(partOfSpeech, baseEntry.UserId, baseEntry.Id, foreign, distractors);
+            return new SyllableReorderRepetitionTask(partOfSpeech, baseEntry.Vocabulary.OwnerId, baseEntry.Id, foreign, distractors);
         }
 
         public YesOrNoRepetitionTask CreateYesOrNoTask(VocabularyEntry baseEntry, string distractor)
@@ -120,7 +120,7 @@ namespace Mnemo.Services.RepetitionService.Factories
                 option = distractor;
             }
 
-            return new YesOrNoRepetitionTask(prompt, baseEntry.UserId, baseEntry.Id, option, isCorrect);
+            return new YesOrNoRepetitionTask(prompt, baseEntry.Vocabulary.OwnerId, baseEntry.Id, option, isCorrect);
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿
 namespace Mnemo.Contracts.Pack
 {
-    public class PackResponse
+    public class VocabularyResponse
     {
         public string? Guid { get; set; }
         public string? Name { get; set; }

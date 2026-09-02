@@ -10,7 +10,7 @@ namespace Mnemo.Services.RepetitionService.Strategies
 {
     public class FastRepetitionTaskStrategy : RepetitionTaskStrategy
     {
-        private readonly VocabularyQueries _vocabularyQueries;
+        private readonly VocabularyEntryQueries _entryQueries;
 
         public FastRepetitionTaskStrategy(
             IOptions<RepetitionOptions> options,
@@ -18,17 +18,18 @@ namespace Mnemo.Services.RepetitionService.Strategies
             ILogger<FastRepetitionTaskStrategy> logger,
             RepetitionTaskFactory factory,
             ITaskTypeProvider typeProvider,
-            VocabularyQueries vocabularyQueries) : base(options, sm2, logger, factory, typeProvider)
+            VocabularyEntryQueries entryQueries) : base(options, sm2, logger, factory, typeProvider)
         {
-            _vocabularyQueries = vocabularyQueries;
+            _entryQueries = entryQueries;
         }
 
 
-        protected override async Task<IQueryable<VocabularyEntry>> GetEntriesQuery(int userId, int take)
+        protected override async Task<IQueryable<VocabularyEntry>> GetEntriesQuery(int userId, Guid vocabGuid, int take)
         {
-            var priorityEntriesQuery = _vocabularyQueries
-                .GetByUserIdQuery(userId)
+            var priorityEntriesQuery = _entryQueries
+                .GetVocabEntriesByGuidSecuredQuery(userId, vocabGuid)
                 .Include(e => e.RepetitionState)
+                .Include(e => e.Vocabulary)
                 .NotDueEntries()
                 .NotRepeatedTodayEntries()
                 .GetRandomEntries(take);
@@ -39,8 +40,8 @@ namespace Mnemo.Services.RepetitionService.Strategies
             {
                 var existingIds = priorityEntriesQuery.Select(e => e.Id).ToArray();
 
-                var randomEntries = _vocabularyQueries
-                    .GetByUserIdQuery(userId)
+                var randomEntries = _entryQueries
+                    .GetVocabEntriesByGuidSecuredQuery(userId, vocabGuid)
                     .Include(e => e.RepetitionState)
                     .NotDueEntries()
                     .GetRandomEntries(take - existingIds.Length, existingIds);

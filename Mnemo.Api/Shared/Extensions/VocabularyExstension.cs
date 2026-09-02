@@ -5,9 +5,9 @@ using System.Runtime.CompilerServices;
 
 namespace Mnemo.Shared.Extensions
 {
-    public static class VocabularyPackExstension
+    public static class VocabularyExstension
     {
-        public static bool TryPatch(this VocabularyPack pack, PatchPackRequest patch)
+        public static bool TryPatch(this Vocabulary pack, PatchVocabularyRequest patch)
         {
             string? _name = null;
             if (patch.Name != null)

@@ -30,14 +30,14 @@ namespace Mnemo.Services.RepetitionService.Strategies
         }
 
 
-        public async Task<List<RepetitionTask>> GetTasksAsync(int userId)
+        public async Task<List<RepetitionTask>> GetTasksAsync(int userId, Guid vocabGuid)
         {
             int take = _options.Value.RepetitionTaskCount;
 
             _logger.LogInformation("Attempting to generate {Count} tasks for user (UserId:{UserId})", take, userId);
             var stopwatch = Stopwatch.StartNew();
 
-            var query = await GetEntriesQuery(userId, take);
+            var query = await GetEntriesQuery(userId, vocabGuid, take);
             var targetEntries = await query
                 .ToListAsync();
 
@@ -75,6 +75,6 @@ namespace Mnemo.Services.RepetitionService.Strategies
         }
 
 
-        protected abstract Task<IQueryable<VocabularyEntry>> GetEntriesQuery(int userId, int take);
+        protected abstract Task<IQueryable<VocabularyEntry>> GetEntriesQuery(int userId, Guid vocabGuid, int take);
     }
 }

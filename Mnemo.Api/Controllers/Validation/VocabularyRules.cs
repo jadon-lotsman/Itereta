@@ -1,6 +1,6 @@
 ﻿namespace Mnemo.Controllers.Validation
 {
-    public static class VocabularyPackRules
+    public static class VocabularyRules
     {
         public static bool IsValidName(string? name)
         {

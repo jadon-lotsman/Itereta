@@ -67,7 +67,7 @@ namespace Mnemo.Services.RepetitionService
 
 
 
-        public async Task<RequestResult<List<RepetitionTask>>> StartRepetitionAsync(int userId, string mode)
+        public async Task<RequestResult<List<RepetitionTask>>> StartRepetitionAsync(int userId, Guid vocabGuid, string mode)
         {
             _logger.LogInformation("Attempting to start repetition for user (UserId:{UserId})", userId);
 
@@ -98,7 +98,7 @@ namespace Mnemo.Services.RepetitionService
             }
 
 
-            var tasks = await strategy.GetTasksAsync(userId);
+            var tasks = await strategy.GetTasksAsync(userId, vocabGuid);
 
             if (!tasks.Any())
             {

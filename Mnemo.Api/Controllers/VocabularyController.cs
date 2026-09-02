@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Mnemo.Contracts.Vocabulary;
-using Mnemo.Contracts.Vocabulary.Requests;
+using Mnemo.Contracts.Pack;
+using Mnemo.Contracts.Pack.Requests;
 using Mnemo.Data.Queries;
 using Mnemo.Services.VocabularyService;
 using Mnemo.Shared.Enums;
@@ -12,19 +12,19 @@ namespace Mnemo.Controllers
 {
     [ApiController]
     [Authorize]
-    [Route("api/[controller]/entries")]
+    [Route("api/[controller]")]
     public class VocabularyController : ControllerBase
     {
         private readonly IMapper _mapper;
-        private readonly VocabularyQueries _vocabularyQueries;
-        private readonly VocabularyManagementService _vocabularyService;
+        private readonly VocabularyQueries _packQueries;
+        private readonly VocabularyManagementService _packService;
 
 
-        public VocabularyController(IMapper mapper, VocabularyQueries vocabularyQueries, VocabularyManagementService vocabularyService)
+        public VocabularyController(IMapper mapper, VocabularyQueries packQueries, VocabularyManagementService packService)
         {
             _mapper = mapper;
-            _vocabularyQueries = vocabularyQueries;
-            _vocabularyService = vocabularyService;
+            _packQueries = packQueries;
+            _packService = packService;
         }
 
         private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -32,59 +32,31 @@ namespace Mnemo.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> GetVocabularyPage([FromQuery] string startWord, string endWord, int page, int pageSize)
+        public async Task<IActionResult> GetAllPublic()
         {
-            var response = await _vocabularyService.GetVocabularyPageAsync(UserId, startWord, endWord, page, pageSize);
+            var packs = await _packQueries.GetPublishedAsync();
 
-            return Ok(response);
+            var packsResponse = _mapper.Map<List<VocabularyResponse>>(packs);
+            return Ok(packsResponse);
         }
 
-        [HttpGet("sectors")]
-        public async Task<IActionResult> GetVocabularySectors([FromQuery] string isDescending)
+        [HttpGet("{guid}")]
+        public async Task<IActionResult> GetVocabularyByGuid([FromRoute] Guid guid)
         {
-            var isDescendingBoolean = isDescending == "true" ? true : false;
-            var response = await _vocabularyService.GetVocabularySectorsAsync(UserId, isDescendingBoolean);
+            var pack = await _packQueries.GetByGuidAsync(UserId, guid);
 
-            return Ok(response);
-        }
-
-        [HttpGet("statistics")]
-        public async Task<IActionResult> GetVocabularyStatistics()
-        {
-            var response = await _vocabularyService.GetVocabularyStatisticsAsync(UserId);
-
-            return Ok(response);
-        }
-
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetEntryById(int id)
-        {
-            var entry = await _vocabularyQueries.GetByIdAsync(UserId, id);
-
-            if (entry == null)
+            if (pack == null)
                 return NotFound();
 
-            var entryRespose = _mapper.Map<EntryResponse>(entry);
-            return Ok(entryRespose);
-        }
-
-        [HttpGet("search")]
-        public async Task<IActionResult> SearchInVocabularyByQuery([FromQuery] string query)
-        {
-            var entries = await _vocabularyQueries.GetByQueryAsync(UserId, query);
-
-            if (entries == null)
-                return NotFound();
-
-            var entriesResponse = _mapper.Map<List<EntryResponse>>(entries);
-            return Ok(entriesResponse);
+            var packResponse = _mapper.Map<VocabularyResponse>(pack);
+            return Ok(packResponse);
         }
 
 
         [HttpPost]
-        public async Task<IActionResult> CreateEntry([FromBody] CreateEntryRequest request)
+        public async Task<IActionResult> CreatePack([FromBody] CreateVocabularyRequest request)
         {
-            var result = await _vocabularyService.CreateEntryAsync(UserId, request);
+            var result = await _packService.CreateVocabularyAsync(UserId, request);
 
             if (!result.IsSuccess)
             {
@@ -92,47 +64,41 @@ namespace Mnemo.Controllers
                 {
                     ErrorCode.InvalidData => BadRequest(new { message = result.ErrorMessage }),
                     ErrorCode.UserNotFound => NotFound(new { message = result.ErrorMessage }),
-                    ErrorCode.DuplicateEntry => Conflict(new { message = result.ErrorMessage }),
                     _ => StatusCode(500, new { message = result.ErrorMessage })
                 };
             }
 
-            var entry = result.Value;
-            var entryRespose = _mapper.Map<EntryResponse>(entry);
-            return Ok(entryRespose);
+            var packResponse = _mapper.Map<VocabularyResponse>(result.Value);
+            return Ok(packResponse);
         }
 
-        [HttpPatch("{id:int}")]
-        public async Task<IActionResult> PatchEntry(int id, [FromBody] PatchEntryRequest request)
+        [HttpPost("{guid}")]
+        public async Task<IActionResult> RevokePackGuid(Guid guid)
         {
-            var result = await _vocabularyService.PatchEntryAsync(UserId, id, request);
+            var result = await _packService.RevokeVocabularyGuidAsync(UserId, guid);
 
             if (!result.IsSuccess)
             {
                 return result.ErrorCode switch
                 {
-                    ErrorCode.InvalidData => BadRequest(new { message = result.ErrorMessage }),
-                    ErrorCode.EntryNotFound => NotFound(new { message = result.ErrorMessage }),
-                    ErrorCode.DuplicateEntry => Conflict(new { message = result.ErrorMessage }),
+                    ErrorCode.VocabularyNotFound => NotFound(new { message = result.ErrorMessage }),
                     _ => StatusCode(500, new { message = result.ErrorMessage })
                 };
             }
 
-            var entry = result.Value;
-            var entryRespose = _mapper.Map<EntryResponse>(entry);
-            return Ok(entryRespose);
+            return Ok(new { NewGuid = result.Value });
         }
 
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> DeleteEntry(int id)
+        [HttpDelete("{guid}")]
+        public async Task<IActionResult> DeletePack(Guid guid)
         {
-            var result = await _vocabularyService.RemoveEntryByIdAsync(UserId, id);
+            var result = await _packService.RemoveVocabularyByGuidAsync(UserId, guid);
 
             if (!result.IsSuccess)
             {
                 return result.ErrorCode switch
                 {
-                    ErrorCode.EntryNotFound => NotFound(new { message = result.ErrorMessage }),
+                    ErrorCode.VocabularyNotFound => NotFound(new { message = result.ErrorMessage }),
                     _ => StatusCode(500, new { message = result.ErrorMessage })
                 };
             }
