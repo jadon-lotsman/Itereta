@@ -2,8 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Mnemo.Contracts.Entry;
-using Mnemo.Contracts.Vocabulary;
-using Mnemo.Contracts.Vocabulary.Requests;
+using Mnemo.Contracts.Entry.Requests;
 using Mnemo.Data.Queries;
 using Mnemo.Services.VocabularyService;
 using Mnemo.Shared.Enums;
@@ -13,49 +12,27 @@ namespace Mnemo.Controllers
 {
     [ApiController]
     [Authorize]
-    [Route("api/[controller]")]
-    public class VocabularyController : ControllerBase
+    [Route("api/vocabularies/{guid}/entries")]
+    public class VocabularyEntriesController : ControllerBase
     {
         private readonly IMapper _mapper;
         private readonly VocabularyQueries _vocabularyQueries;
         private readonly VocabularyEntryQueries _entryQueries;
-        private readonly VocabularyManagementService _vocabularyService;
+        private readonly EntryManagementService _entryService;
 
 
-        public VocabularyController(IMapper mapper, VocabularyQueries vocabularyQueries, VocabularyEntryQueries entryQueries, VocabularyManagementService vocabularyService)
+        public VocabularyEntriesController(IMapper mapper, VocabularyQueries vocabularyQueries, VocabularyEntryQueries entryQueries, EntryManagementService entryService)
         {
             _mapper = mapper;
             _vocabularyQueries = vocabularyQueries;
             _entryQueries = entryQueries;
-            _vocabularyService = vocabularyService;
+            _entryService = entryService;
         }
 
         private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
 
-
         [HttpGet]
-        public async Task<IActionResult> GetAllPublic()
-        {
-            var vocabs = await _vocabularyQueries.GetPublishedAsync();
-
-            var vocabsResponse = _mapper.Map<List<VocabularyResponse>>(vocabs);
-            return Ok(vocabsResponse);
-        }
-
-        [HttpGet("{guid}")]
-        public async Task<IActionResult> GetVocabularyByGuid([FromRoute] Guid guid)
-        {
-            var vocab = await _vocabularyQueries.GetByGuidAsync(UserId, guid);
-
-            if (vocab == null)
-                return NotFound();
-
-            var vocabResponse = _mapper.Map<VocabularyResponse>(vocab);
-            return Ok(vocabResponse);
-        }
-
-        [HttpGet("{guid}/search")]
         public async Task<IActionResult> SearchInVocabulary(Guid guid, [FromQuery] string query)
         {
             var id = await _vocabularyQueries.GetIdByGuidAsync(UserId, guid);
@@ -72,11 +49,18 @@ namespace Mnemo.Controllers
             return Ok(entriesResponse);
         }
 
+        [HttpGet("{startWord:alpha}-{endWord:alpha}")]
+        public async Task<IActionResult> GetVocabularyPage(Guid guid, string startWord, string endWord, [FromQuery] int page, int pageSize)
+        {
+            var response = await _entryService.GetVocabularyPageAsync(UserId, guid, startWord, endWord, page, pageSize);
+
+            return Ok(response);
+        }
 
         [HttpPost]
-        public async Task<IActionResult> CreateVocabulary([FromBody] CreateVocabularyRequest request)
+        public async Task<IActionResult> CreateEntry(Guid guid, [FromBody] CreateEntryRequest request)
         {
-            var result = await _vocabularyService.CreateVocabularyAsync(UserId, request);
+            var result = await _entryService.CreateEntryAsync(UserId, guid, request);
 
             if (!result.IsSuccess)
             {
@@ -84,41 +68,47 @@ namespace Mnemo.Controllers
                 {
                     ErrorCode.InvalidData => BadRequest(new { message = result.ErrorMessage }),
                     ErrorCode.UserNotFound => NotFound(new { message = result.ErrorMessage }),
+                    ErrorCode.DuplicateEntry => Conflict(new { message = result.ErrorMessage }),
                     _ => StatusCode(500, new { message = result.ErrorMessage })
                 };
             }
 
-            var vocabResponse = _mapper.Map<VocabularyResponse>(result.Value);
-            return Ok(vocabResponse);
+            var entry = result.Value;
+            var entryRespose = _mapper.Map<EntryResponse>(entry);
+            return Ok(entryRespose);
         }
 
-        [HttpPost("{guid}")]
-        public async Task<IActionResult> RevokeVocabularyGuid(Guid guid)
+        [HttpPatch("{id:int}")]
+        public async Task<IActionResult> PatchEntry(Guid guid, int id, [FromBody] PatchEntryRequest request)
         {
-            var result = await _vocabularyService.RevokeVocabularyGuidAsync(UserId, guid);
+            var result = await _entryService.PatchEntryAsync(UserId, guid, id, request);
 
             if (!result.IsSuccess)
             {
                 return result.ErrorCode switch
                 {
-                    ErrorCode.VocabularyNotFound => NotFound(new { message = result.ErrorMessage }),
+                    ErrorCode.InvalidData => BadRequest(new { message = result.ErrorMessage }),
+                    ErrorCode.EntryNotFound => NotFound(new { message = result.ErrorMessage }),
+                    ErrorCode.DuplicateEntry => Conflict(new { message = result.ErrorMessage }),
                     _ => StatusCode(500, new { message = result.ErrorMessage })
                 };
             }
 
-            return Ok(new { newGuid = result.Value });
+            var entry = result.Value;
+            var entryRespose = _mapper.Map<EntryResponse>(entry);
+            return Ok(entryRespose);
         }
 
-        [HttpDelete("{guid}")]
-        public async Task<IActionResult> DeleteVocabulary(Guid guid)
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> DeleteEntry(Guid guid, int id)
         {
-            var result = await _vocabularyService.RemoveVocabularyByGuidAsync(UserId, guid);
+            var result = await _entryService.RemoveEntryByIdAsync(UserId, guid, id);
 
             if (!result.IsSuccess)
             {
                 return result.ErrorCode switch
                 {
-                    ErrorCode.VocabularyNotFound => NotFound(new { message = result.ErrorMessage }),
+                    ErrorCode.EntryNotFound => NotFound(new { message = result.ErrorMessage }),
                     _ => StatusCode(500, new { message = result.ErrorMessage })
                 };
             }

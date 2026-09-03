@@ -12,7 +12,7 @@ using System.Text;
 namespace Mnemo.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/account")]
     public class AccountController : ControllerBase
     {
         private readonly AccountQueries _accountQueries;

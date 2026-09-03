@@ -13,7 +13,7 @@ namespace Mnemo.Controllers
 {
     [ApiController]
     [Authorize]
-    [Route("api/[controller]")]
+    [Route("api/repetition")]
     public class RepetitionController : ControllerBase
     {
         private readonly IMapper _mapper;

@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
+using Mnemo.Contracts.Entry;
 using Mnemo.Contracts.Entry.Requests;
 using Mnemo.Contracts.Vocabulary.Requests;
 using Mnemo.Data;
@@ -19,11 +21,20 @@ namespace Mnemo.Services.VocabularyService
         private readonly IMapper _mapper;
         private readonly AppDbContext _context;
         private readonly AccountQueries _accountQueries;
+        private readonly VocabularyEntryQueries _entryQueries;
         private readonly VocabularyQueries _vocabularyQueries;
 
 
 
-        public VocabularyManagementService(ILogger<VocabularyManagementService> logger, IValidator<CreateVocabularyRequest> createVocabularyValidator, IValidator<CreateEntryRequest> createEntryValidator, IMapper mapper, AppDbContext context, AccountQueries accountQueries, VocabularyQueries vocabularyQueries)
+        public VocabularyManagementService(
+            ILogger<VocabularyManagementService> logger,
+            IValidator<CreateVocabularyRequest> createVocabularyValidator,
+            IValidator<CreateEntryRequest> createEntryValidator,
+            IMapper mapper,
+            AppDbContext context,
+            AccountQueries accountQueries,
+            VocabularyEntryQueries entryQueries,
+            VocabularyQueries vocabularyQueries)
         {
             _logger = logger;
             _createVocabularyValidator = createVocabularyValidator;
@@ -31,9 +42,107 @@ namespace Mnemo.Services.VocabularyService
             _mapper = mapper;
             _context = context;
             _accountQueries = accountQueries;
+            _entryQueries = entryQueries;
             _vocabularyQueries = vocabularyQueries;
         }
 
+
+        public async Task<VocabularyStatisticsResponse> GetVocabularyStatisticsAsync(int userId, Guid guid)
+        {
+            var query = _entryQueries
+                .GetEntriesByVocabularyGuidQuery(userId, guid);
+
+            var totalEntries = await query
+                .CountAsync();
+            var totalTranslations = await query
+                .SumAsync(e => e.Translations.Count);
+
+
+            return new VocabularyStatisticsResponse()
+            {
+                TotalEntries = totalEntries,
+                TotalTranslations = totalTranslations
+            };
+        }
+
+        public async Task<List<VocabularySectorResponse>> GetVocabularySectorsAsync(int userId, Guid guid, bool isDescending)
+        {
+            var query = _entryQueries.GetEntriesByVocabularyGuidQuery(userId, guid);
+            int minSectorSize = Math.Max(10, query.Count() / 7);
+
+            var groupQuery = query
+                .GroupBy(e => e.Foreign.Substring(0, 1))
+                .Select(g => new
+                {
+                    Letter = g.Key,
+                    Count = g.Count(),
+                    StartWord = g.Min(e => e.Foreign)!,
+                    EndWord = g.Max(e => e.Foreign)!
+                })
+                .OrderBy(e => e.Letter);
+
+
+            var groups = await groupQuery.ToListAsync();
+            var sectors = new List<VocabularySectorResponse>();
+            var index = 0;
+
+            foreach (var group in groups)
+            {
+                string sectorStart = group.StartWord;
+                string sectorEnd = group.EndWord;
+                int count = group.Count;
+
+
+                if (!sectors.Any())
+                {
+                    sectors.Add(new VocabularySectorResponse()
+                    {
+                        StartWord = sectorStart,
+                        EndWord = sectorEnd,
+                        Count = count
+                    });
+                }
+                else
+                {
+                    var lastSection = sectors.Last();
+                    var isLastGroup = index == groups.Count - 1;
+
+                    if (lastSection.Count < minSectorSize || (isLastGroup && count < minSectorSize))
+                    {
+                        lastSection.EndWord = sectorEnd;
+                        lastSection.Count += count;
+                    }
+                    else
+                    {
+                        sectors.Add(new VocabularySectorResponse()
+                        {
+                            StartWord = sectorStart,
+                            EndWord = sectorEnd,
+                            Count = count
+                        });
+                    }
+                }
+
+                index++;
+            }
+
+            if (sectors.Any())
+            {
+                sectors.First().StartWord = "a";
+                sectors.Last().EndWord = "z" + char.MaxValue;
+
+                if (isDescending)
+                {
+                    foreach (var sector in sectors)
+                        (sector.EndWord, sector.StartWord) = (sector.StartWord, sector.EndWord);
+
+                    sectors.Reverse();
+                }
+            }
+
+
+            return sectors;
+        }
 
         public async Task<RequestResult<Vocabulary>> CreateVocabularyAsync(int userId, CreateVocabularyRequest request)
         {
