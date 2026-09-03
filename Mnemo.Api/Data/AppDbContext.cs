@@ -30,27 +30,31 @@ namespace Mnemo.Data
                 .IsUnique();
 
             // Relations
+            modelBuilder.Entity<User>()
+                .HasMany(p => p.Vocabularies)
+                .WithOne(u => u.Owner)
+                .HasForeignKey(p => p.OwnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<User>()
+                .HasMany(p => p.RepetitionTasks)
+                .WithOne(u => u.Owner)
+                .HasForeignKey(p => p.OwnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
             modelBuilder.Entity<Vocabulary>()
                 .HasMany(v => v.Entries)
                 .WithOne(e => e.Vocabulary)
                 .HasForeignKey(e => e.VocabularyId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Vocabulary>()
-                .HasOne(p => p.Owner)
-                .WithMany(u => u.Vocabularies)
-                .HasForeignKey(p => p.OwnerId);
 
             modelBuilder.Entity<VocabularyEntry>()
                 .HasOne(e => e.RepetitionState)
                 .WithOne(s => s.VocabularyEntry)
                 .HasForeignKey<RepetitionState>(s => s.VocabularyEntryId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<VocabularyEntry>()
-                .HasOne(e => e.Vocabulary)
-                .WithMany(v => v.Entries)
-                .HasForeignKey(e => e.VocabularyId);
 
             // Discriminators
             modelBuilder.Entity<RepetitionTask>()

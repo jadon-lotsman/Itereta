@@ -37,7 +37,7 @@ namespace Mnemo.Services.VocabularyService
 
         public async Task<RequestResult<Vocabulary>> CreateVocabularyAsync(int userId, CreateVocabularyRequest request)
         {
-            _logger.LogInformation("Attempting to create a pack for user (UserId:{UserId})", userId);
+            _logger.LogInformation("Attempting to create a vocabulary for user (UserId:{UserId})", userId);
 
             var validationPackResult = await _createPackValidator.ValidateAsync(request);
             if (!validationPackResult.IsValid)
@@ -93,33 +93,39 @@ namespace Mnemo.Services.VocabularyService
 
             await _context.AddAsync(pack);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully created pack (Guid:{Guid}) for user (UserId:{UserId})", pack.Guid, userId);
+            _logger.LogInformation("Successfully created vocabulary (Guid:{Guid}) for user (UserId:{UserId})", pack.Guid, userId);
 
             return RequestResult<Vocabulary>.Success(pack);
         }
 
         public async Task<RequestResult<Vocabulary>> PatchVocabularyAsync(int userId, Guid vocabGuid, PatchVocabularyRequest request)
         {
-            _logger.LogInformation("Attempting to patch a vocabulary pack for user (UserId:{UserId})", userId);
+            _logger.LogInformation("Attempting to patch a vocabulary for user (UserId:{UserId})", userId);
 
-            var currentPack = await _packQueries.GetByGuidAsync(userId, vocabGuid);
+            var id = await _packQueries.GetIdByGuidAsync(userId, vocabGuid);
+            if (!id.HasValue)
+            {
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", vocabGuid, userId);
+                return RequestResult<Vocabulary>.Failure(ErrorCode.AccessDenied);
+            }
+
+            var currentPack = await _packQueries.GetByIdAsync(userId, id.Value);
             if (currentPack == null)
             {
-                _logger.LogWarning("Pack (Guid:{Guid}) not found for user (UserId:{UserId})", vocabGuid, userId);
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found for user (UserId:{UserId})", vocabGuid, userId);
                 return RequestResult<Vocabulary>.Failure(ErrorCode.VocabularyNotFound);
             }
 
             var isPatched = currentPack.TryPatch(request);
-
             if (!isPatched)
             {
-                _logger.LogError("TryPatch failed for pack (Guid:{Guid}): Invalid Data", vocabGuid);
+                _logger.LogError("TryPatch failed for vocabulary (Guid:{Guid}): Invalid Data", vocabGuid);
                 return RequestResult<Vocabulary>.Failure(ErrorCode.InvalidData, "Failed to apply patch");
             }
 
 
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully patched pack (Guid:{Guid}) for user (UserId:{UserId})", vocabGuid, userId);
+            _logger.LogInformation("Successfully patched vocabulary (Guid:{Guid}) for user (UserId:{UserId})", vocabGuid, userId);
 
             return RequestResult<Vocabulary>.Success(currentPack);
         }
@@ -130,10 +136,17 @@ namespace Mnemo.Services.VocabularyService
         {
             _logger.LogInformation("Attempting to revoke guid for pack (Guid:{Guid}) for user (UserId:{UserId})", vocabGuid, userId);
 
-            var currentPack = await _packQueries.GetByGuidAsync(userId, vocabGuid);
+            var id = await _packQueries.GetIdByGuidAsync(userId, vocabGuid);
+            if (!id.HasValue)
+            {
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", vocabGuid, userId);
+                return RequestResult<Guid>.Failure(ErrorCode.AccessDenied);
+            }
+
+            var currentPack = await _packQueries.GetByIdAsync(userId, id.Value);
             if (currentPack == null)
             {
-                _logger.LogWarning("Pack (Guid:{Guid}) not found for user (UserId:{UserId})", vocabGuid, userId);
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found for user (UserId:{UserId})", vocabGuid, userId);
                 return RequestResult<Guid>.Failure(ErrorCode.VocabularyNotFound);
             }
 
@@ -141,26 +154,33 @@ namespace Mnemo.Services.VocabularyService
             var newGuid = Guid.NewGuid();
             currentPack.Guid = newGuid;
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully revoked guid for pack (Guid:{Guid}) for user (UserId:{UserId})", vocabGuid, userId);
+            _logger.LogInformation("Successfully revoked guid for vocabulary (Guid:{Guid}) for user (UserId:{UserId})", vocabGuid, userId);
 
             return RequestResult<Guid>.Success(newGuid);
         }
 
         public async Task<RequestResult<bool>> RemoveVocabularyByGuidAsync(int userId, Guid vocabGuid)
         {
-            _logger.LogInformation("Attempting to delete pack (Guid:{Guid}) for user (UserId:{UserId})", vocabGuid, userId);
+            _logger.LogInformation("Attempting to delete vocabulary (Guid:{Guid}) for user (UserId:{UserId})", vocabGuid, userId);
 
-            var currentPack = await _packQueries.GetByGuidAsync(userId, vocabGuid);
+            var id = await _packQueries.GetIdByGuidAsync(userId, vocabGuid);
+            if (!id.HasValue)
+            {
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", vocabGuid, userId);
+                return RequestResult<bool>.Failure(ErrorCode.AccessDenied);
+            }
+
+            var currentPack = await _packQueries.GetByIdAsync(userId, id.Value);
             if (currentPack == null)
             {
-                _logger.LogWarning("Pack (Guid:{Guid}) not found for user (UserId:{UserId})", vocabGuid, userId);
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found for user (UserId:{UserId})", vocabGuid, userId);
                 return RequestResult<bool>.Failure(ErrorCode.VocabularyNotFound);
             }
 
 
             _context.Vocabularies.Remove(currentPack);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully deleted pack (Guid:{Guid}) for user (UserId:{UserId})", vocabGuid, userId);
+            _logger.LogInformation("Successfully deleted vocabulary (Guid:{Guid}) for user (UserId:{UserId})", vocabGuid, userId);
 
             return RequestResult<bool>.Success(true);
         }

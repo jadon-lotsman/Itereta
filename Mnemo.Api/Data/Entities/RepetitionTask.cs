@@ -18,8 +18,8 @@ namespace Mnemo.Data.Entities
         public TimeSpan ElapsedTime { get; set; }
 
 
-        public int UserId { get; set; }
-        public User User { get; set; }
+        public int OwnerId { get; set; }
+        public User Owner { get; set; }
 
 
         public RepetitionTask() { }
@@ -30,7 +30,7 @@ namespace Mnemo.Data.Entities
             UserAnswer = string.Empty;
             EntryPartOfSpeech = partOfSpeech;
 
-            UserId = userId;
+            OwnerId = userId;
             VocabularyEntryId = entryId;
         }
 

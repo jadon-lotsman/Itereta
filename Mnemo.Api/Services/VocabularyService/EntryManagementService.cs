@@ -51,11 +51,10 @@ namespace Mnemo.Services.VocabularyService
         public async Task<VocabularyStatisticsResponse> GetVocabularyStatisticsAsync(int userId, Guid vocabGuid)
         {
             var query = _entryQueries
-                .GetVocabEntriesByGuidSecuredQuery(userId, vocabGuid);
+                .GetEntriesByVocabularyGuidQuery(userId, vocabGuid);
 
             var totalEntries = await query
                 .CountAsync();
-
             var totalTranslations = await query
                 .SumAsync(e => e.Translations.Count);
 
@@ -69,7 +68,7 @@ namespace Mnemo.Services.VocabularyService
 
         public async Task<List<VocabularySectorResponse>> GetVocabularySectorsAsync(int userId, Guid vocabGuid, bool isDescending)
         {
-            var query = _entryQueries.GetVocabEntriesByGuidSecuredQuery(userId, vocabGuid);
+            var query = _entryQueries.GetEntriesByVocabularyGuidQuery(userId, vocabGuid);
             int minSectorSize = Math.Max(10, query.Count() / 7);
 
             var groupQuery = query
@@ -164,7 +163,7 @@ namespace Mnemo.Services.VocabularyService
 
 
             var filteredQuery = _entryQueries
-                .GetVocabEntriesByGuidSecuredQuery(userId, vocabGuid)
+                .GetEntriesByVocabularyGuidQuery(userId, vocabGuid)
                 .Where(e => string.Compare(e.Foreign, minWord) >= 0 &&
                             string.Compare(e.Foreign, maxWord) <= 0);
 
@@ -211,7 +210,14 @@ namespace Mnemo.Services.VocabularyService
         {
             _logger.LogInformation("Attempting to create {Count} vocabulary entries for user (UserId:{UserId})", requests.Count, userId);
 
-            if (!await _vocabularyQueries.ExistsByGuidAsync(userId, vocabGuid))
+            int? id = await _vocabularyQueries.GetIdByGuidAsync(userId, vocabGuid);
+            if (!id.HasValue)
+            {
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", vocabGuid, userId);
+                return MassRequestResult<VocabularyEntry>.AbsolutelyFailure(requests.Count, ErrorCode.AccessDenied);
+            }
+
+            if (!await _vocabularyQueries.ExistsByIdAsync(userId, id.Value))
             {
                 _logger.LogWarning("Vocabulary (Guid:{Guid}) not found", vocabGuid);
                 return MassRequestResult<VocabularyEntry>.AbsolutelyFailure(requests.Count, ErrorCode.VocabularyNotFound);
@@ -257,15 +263,7 @@ namespace Mnemo.Services.VocabularyService
                 .ToList();
 
             var existingKeys = await _entryQueries
-                .GetExistingKeysAsync(userId, vocabGuid, foreigns!);
-
-
-            int? vocabId = await _vocabularyQueries.GetIdByGuidAsync(userId, vocabGuid);
-            if (!vocabId.HasValue)
-            {
-                _logger.LogWarning("Translate vocabulary Guid (Guid:{Guid}) to vocabulary int Id returned nullable from user (UserId:{UserId})", vocabGuid, userId);
-                return MassRequestResult<VocabularyEntry>.PartialSuccess(results);
-            }
+                .GetExistingKeysAsync(userId, id.Value, foreigns!);
 
 
             var entriesToAdd = new List<VocabularyEntry>();
@@ -278,7 +276,7 @@ namespace Mnemo.Services.VocabularyService
                     continue;
                 }
 
-                entry.VocabularyId = vocabId.Value;
+                entry.VocabularyId = id.Value;
                 entry.RepetitionState = new RepetitionState()
                 {
                     EasinessFactor = _sm2.Value.InitEF,
@@ -304,6 +302,13 @@ namespace Mnemo.Services.VocabularyService
         {
             _logger.LogInformation("Patching entry (EntryId:{EntryId}) for user (UserId:{UserId})", entryId, userId);
 
+            int? id = await _vocabularyQueries.GetIdByGuidAsync(userId, vocabGuid);
+            if (!id.HasValue)
+            {
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", vocabGuid, userId);
+                return RequestResult<VocabularyEntry>.Failure(ErrorCode.AccessDenied);
+            }
+
             var validationResult = await _patchValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
@@ -313,7 +318,7 @@ namespace Mnemo.Services.VocabularyService
             }
 
 
-            var currentEntry = await _entryQueries.GetByIdAsync(userId, vocabGuid, entryId);
+            var currentEntry = await _entryQueries.GetByIdAsync(userId, id.Value, entryId);
             if (currentEntry == null)
             {
                 _logger.LogWarning("Entry (EntryId:{EntryId}) not found for user (UserId:{UserId})", entryId, userId);
@@ -345,7 +350,7 @@ namespace Mnemo.Services.VocabularyService
                 var checkForeign = newForeign ?? currentEntry.Foreign;
                 var checkPartOfSpeech = newPartOfSpeech ?? currentEntry.PartOfSpeech;
 
-                if (await _entryQueries.ExistsByKeysAsync(userId, vocabGuid, checkForeign, checkPartOfSpeech))
+                if (await _entryQueries.ExistsByKeysAsync(userId, id.Value, checkForeign, checkPartOfSpeech))
                 {
                     _logger.LogWarning("Duplicate check failed for entry (EntryId:{EntryId})", entryId);
                     return RequestResult<VocabularyEntry>.Failure(ErrorCode.DuplicateEntry, "Entry already exists");
@@ -380,11 +385,18 @@ namespace Mnemo.Services.VocabularyService
             return RequestResult<VocabularyEntry>.Success(currentEntry);
         }
 
-        public async Task<RequestResult<bool>> RemoveEntryByIdAsync(int userId, Guid vocabId, int entryId)
+        public async Task<RequestResult<bool>> RemoveEntryByIdAsync(int userId, Guid vocabGuid, int entryId)
         {
             _logger.LogInformation("Attempting to delete entry (EntryId:{EntryId}) for user (UserId:{UserId})", entryId, userId);
 
-            var currentEntry = await _entryQueries.GetByIdAsync(userId, vocabId, entryId);
+            int? id = await _vocabularyQueries.GetIdByGuidAsync(userId, vocabGuid);
+            if (!id.HasValue)
+            {
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", vocabGuid, userId);
+                return RequestResult<bool>.Failure(ErrorCode.AccessDenied);
+            }
+
+            var currentEntry = await _entryQueries.GetByIdAsync(userId, id.Value, entryId);
             if (currentEntry == null)
             {
                 _logger.LogWarning("Entry (EntryId:{EntryId}) not found for user (UserId:{UserId})", entryId, userId);

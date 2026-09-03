@@ -18,7 +18,7 @@ namespace Mnemo.Services.RepetitionService.Providers.DistractorProviders
         public async Task<List<string>> GetDistractorsAsync(bool isForward, VocabularyEntry baseEntry, int take, params int[] excludeIds)
         {
             var query = _vocabularyQueries
-                    .GetVocabEntriesByGuidSecuredQuery(baseEntry.Vocabulary.OwnerId, baseEntry.Vocabulary.Guid);
+                    .GetEntriesByVocabularyIdQuery(baseEntry.Vocabulary.OwnerId, baseEntry.VocabularyId);
 
             if (isForward)
             {

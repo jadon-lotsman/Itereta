@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Mnemo.Contracts.Pack;
 using Mnemo.Contracts.Pack.Requests;
+using Mnemo.Contracts.Vocabulary;
 using Mnemo.Data.Queries;
 using Mnemo.Services.VocabularyService;
 using Mnemo.Shared.Enums;
@@ -16,15 +17,17 @@ namespace Mnemo.Controllers
     public class VocabularyController : ControllerBase
     {
         private readonly IMapper _mapper;
-        private readonly VocabularyQueries _packQueries;
-        private readonly VocabularyManagementService _packService;
+        private readonly VocabularyQueries _vocabularyQueries;
+        private readonly VocabularyEntryQueries _entryQueries;
+        private readonly VocabularyManagementService _vocabularyService;
 
 
-        public VocabularyController(IMapper mapper, VocabularyQueries packQueries, VocabularyManagementService packService)
+        public VocabularyController(IMapper mapper, VocabularyQueries vocabularyQueries, VocabularyEntryQueries entryQueries, VocabularyManagementService vocabularyService)
         {
             _mapper = mapper;
-            _packQueries = packQueries;
-            _packService = packService;
+            _vocabularyQueries = vocabularyQueries;
+            _entryQueries = entryQueries;
+            _vocabularyService = vocabularyService;
         }
 
         private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -34,7 +37,7 @@ namespace Mnemo.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllPublic()
         {
-            var packs = await _packQueries.GetPublishedAsync();
+            var packs = await _vocabularyQueries.GetPublishedAsync();
 
             var packsResponse = _mapper.Map<List<VocabularyResponse>>(packs);
             return Ok(packsResponse);
@@ -43,7 +46,7 @@ namespace Mnemo.Controllers
         [HttpGet("{guid}")]
         public async Task<IActionResult> GetVocabularyByGuid([FromRoute] Guid guid)
         {
-            var pack = await _packQueries.GetByGuidAsync(UserId, guid);
+            var pack = await _vocabularyQueries.GetByGuidAsync(UserId, guid);
 
             if (pack == null)
                 return NotFound();
@@ -52,11 +55,28 @@ namespace Mnemo.Controllers
             return Ok(packResponse);
         }
 
+        [HttpGet("{guid}/search")]
+        public async Task<IActionResult> SearchInVocabularyByQuery(Guid guid, [FromQuery] string query)
+        {
+            var id = await _vocabularyQueries.GetIdByGuidAsync(UserId, guid);
+
+            if (!id.HasValue)
+                return Forbid();
+
+            var entries = await _entryQueries.GetByQueryAsync(UserId, id.Value, query);
+
+            if (entries == null)
+                return NotFound();
+
+            var entriesResponse = _mapper.Map<List<EntryResponse>>(entries);
+            return Ok(entriesResponse);
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> CreatePack([FromBody] CreateVocabularyRequest request)
         {
-            var result = await _packService.CreateVocabularyAsync(UserId, request);
+            var result = await _vocabularyService.CreateVocabularyAsync(UserId, request);
 
             if (!result.IsSuccess)
             {
@@ -75,7 +95,7 @@ namespace Mnemo.Controllers
         [HttpPost("{guid}")]
         public async Task<IActionResult> RevokePackGuid(Guid guid)
         {
-            var result = await _packService.RevokeVocabularyGuidAsync(UserId, guid);
+            var result = await _vocabularyService.RevokeVocabularyGuidAsync(UserId, guid);
 
             if (!result.IsSuccess)
             {
@@ -92,7 +112,7 @@ namespace Mnemo.Controllers
         [HttpDelete("{guid}")]
         public async Task<IActionResult> DeletePack(Guid guid)
         {
-            var result = await _packService.RemoveVocabularyByGuidAsync(UserId, guid);
+            var result = await _vocabularyService.RemoveVocabularyByGuidAsync(UserId, guid);
 
             if (!result.IsSuccess)
             {

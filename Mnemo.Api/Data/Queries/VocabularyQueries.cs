@@ -16,19 +16,29 @@ namespace Mnemo.Data.Queries
 
 
         // Queries
-        public IQueryable<Vocabulary> GetVocabByGuidSecuredQuery(int ownerId, Guid vocabGuid)
-            => _context.Vocabularies.Where(p => p.Guid == vocabGuid && (p.Visibility != Visibility.Private || p.OwnerId == ownerId));
+        public IQueryable<Vocabulary> GetVocabByIdQuery(int ownerId, int id)
+            => _context.Vocabularies.Where(p => p.OwnerId == ownerId && p.Id == id);
+
+        public IQueryable<Vocabulary> GetVocabByGuidSecuredQuery(int ownerId, Guid guid)
+            => _context.Vocabularies.Where(p => p.Guid == guid && (p.Visibility != Visibility.Private || p.OwnerId == ownerId));
 
 
         // Getters
-        public async Task<bool> ExistsByGuidAsync(int ownerId, Guid vocabGuid)
-            => await GetVocabByGuidSecuredQuery(ownerId, vocabGuid).AnyAsync();
+        public async Task<int?> GetOriginIdAsync(int ownerId)
+            => await _context.Vocabularies.Where(p => p.OwnerId == ownerId && p.IsOrigin).Select(v => v.Id).FirstOrDefaultAsync();
 
-        public async Task<int?> GetIdByGuidAsync(int ownerId, Guid vocabGuid)
-            => await GetVocabByGuidSecuredQuery(ownerId, vocabGuid).Select(v => v.Id).FirstOrDefaultAsync();
+        public async Task<Vocabulary?> GetByGuidAsync(int ownerId, Guid guid)
+            => await GetVocabByGuidSecuredQuery(ownerId, guid).FirstOrDefaultAsync();
 
-        public async Task<Vocabulary?> GetByGuidAsync(int ownerId, Guid vocabGuid)
-            => await GetVocabByGuidSecuredQuery(ownerId, vocabGuid).FirstOrDefaultAsync();
+        public async Task<int?> GetIdByGuidAsync(int ownerId, Guid guid)
+            => await GetVocabByGuidSecuredQuery(ownerId, guid).Select(v => v.Id).FirstOrDefaultAsync();
+
+
+        public async Task<bool> ExistsByIdAsync(int ownerId, int id)
+            => await GetVocabByIdQuery(ownerId, id).AnyAsync();
+
+        public async Task<Vocabulary?> GetByIdAsync(int ownerId, int id)
+            => await GetVocabByIdQuery(ownerId, id).FirstOrDefaultAsync();
 
         public async Task<List<Vocabulary>> GetPublishedAsync()
             => await _context.Vocabularies.Where(p => p.Visibility == Visibility.Public).ToListAsync();

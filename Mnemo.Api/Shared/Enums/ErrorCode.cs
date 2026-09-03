@@ -7,7 +7,7 @@
         InvalidPassword,
 
         // 403 Forbidden
-        ActionNotAllowed,
+        AccessDenied,
 
         // 404 NotFound
         UserNotFound,

@@ -11,6 +11,7 @@ namespace Mnemo.Data.Entities
         public Visibility Visibility { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public bool IsOrigin { get; set; }
 
 
         public int OwnerId { get; set; }
@@ -20,11 +21,12 @@ namespace Mnemo.Data.Entities
 
         public Vocabulary()
         {
+            Guid = Guid.NewGuid();
             Visibility = Visibility.Private;
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = CreatedAt;
+            IsOrigin = false;
 
-            Guid = Guid.NewGuid();
             Entries = new List<VocabularyEntry>();
         }
     }

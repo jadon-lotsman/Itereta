@@ -16,8 +16,8 @@
         {
             RegisteredAt = DateTime.UtcNow;
 
-            RepetitionTasks = new List<RepetitionTask>();
             Vocabularies = new List<Vocabulary>();
+            RepetitionTasks = new List<RepetitionTask>();
         }
     }
 }
