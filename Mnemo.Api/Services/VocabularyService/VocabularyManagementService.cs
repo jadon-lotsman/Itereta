@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using FluentValidation;
-using Mnemo.Contracts.Pack.Requests;
+using Mnemo.Contracts.Entry.Requests;
 using Mnemo.Contracts.Vocabulary.Requests;
 using Mnemo.Data;
 using Mnemo.Data.Entities;
@@ -14,24 +14,24 @@ namespace Mnemo.Services.VocabularyService
     public class VocabularyManagementService
     {
         private readonly ILogger<VocabularyManagementService> _logger;
-        private readonly IValidator<CreateVocabularyRequest> _createPackValidator;
+        private readonly IValidator<CreateVocabularyRequest> _createVocabularyValidator;
         private readonly IValidator<CreateEntryRequest> _createEntryValidator;
         private readonly IMapper _mapper;
         private readonly AppDbContext _context;
         private readonly AccountQueries _accountQueries;
-        private readonly VocabularyQueries _packQueries;
+        private readonly VocabularyQueries _vocabularyQueries;
 
 
 
-        public VocabularyManagementService(ILogger<VocabularyManagementService> logger, IValidator<CreateVocabularyRequest> createPackValidator, IValidator<CreateEntryRequest> createEntryValidator, IMapper mapper, AppDbContext context, AccountQueries accountQueries, VocabularyQueries packQueries)
+        public VocabularyManagementService(ILogger<VocabularyManagementService> logger, IValidator<CreateVocabularyRequest> createVocabularyValidator, IValidator<CreateEntryRequest> createEntryValidator, IMapper mapper, AppDbContext context, AccountQueries accountQueries, VocabularyQueries vocabularyQueries)
         {
             _logger = logger;
-            _createPackValidator = createPackValidator;
+            _createVocabularyValidator = createVocabularyValidator;
             _createEntryValidator = createEntryValidator;
             _mapper = mapper;
             _context = context;
             _accountQueries = accountQueries;
-            _packQueries = packQueries;
+            _vocabularyQueries = vocabularyQueries;
         }
 
 
@@ -39,11 +39,11 @@ namespace Mnemo.Services.VocabularyService
         {
             _logger.LogInformation("Attempting to create a vocabulary for user (UserId:{UserId})", userId);
 
-            var validationPackResult = await _createPackValidator.ValidateAsync(request);
-            if (!validationPackResult.IsValid)
+            var validationResult = await _createVocabularyValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)
             {
-                var messages = string.Join("; ", validationPackResult.Errors.Select(e => e.ErrorMessage));
-                _logger.LogWarning("CreatePackRequest (UserId:{UserId}) is not valid: {messages}", userId, messages);
+                var messages = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                _logger.LogWarning("CreateVocabularyRequest (UserId:{UserId}) is not valid: {messages}", userId, messages);
                 return RequestResult<Vocabulary>.Failure(ErrorCode.InvalidData, string.Join("; ", messages));
             }
 
@@ -61,7 +61,7 @@ namespace Mnemo.Services.VocabularyService
             _logger.LogDebug("Requests validating from user (UserId:{UserId})...", userId);
 
             var validReq = new List<CreateEntryRequest>();
-            foreach (var req in request.PackEntries)
+            foreach (var req in request.Entries)
             {
                 var validationEntryResult = await _createEntryValidator.ValidateAsync(req);
                 if (!validationEntryResult.IsValid)
@@ -78,109 +78,107 @@ namespace Mnemo.Services.VocabularyService
 
             if (!validReq.Any())
             {
-                var messages = string.Join("; ", validationPackResult.Errors.Select(e => e.ErrorMessage));
-                _logger.LogInformation("All requests ({Count}) is not valid from user (UserId:{UserId}): {messages}", request.PackEntries.Length, userId, messages);
+                var messages = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                _logger.LogInformation("All requests ({Count}) is not valid from user (UserId:{UserId}): {messages}", request.Entries.Length, userId, messages);
                 return RequestResult<Vocabulary>.Failure(ErrorCode.InvalidData, string.Join("; ", messages));
             }
 
 
-            var validPackEntries = _mapper.Map<List<VocabularyEntry>>(validReq);
+            var validNewEntries = _mapper.Map<List<VocabularyEntry>>(validReq);
 
-            var pack = _mapper.Map<Vocabulary>(request);
-            pack.OwnerId = userId;
-            pack.Entries = validPackEntries;
+            var vocab = _mapper.Map<Vocabulary>(request);
+            vocab.OwnerId = userId;
+            vocab.Entries = validNewEntries;
 
 
-            await _context.AddAsync(pack);
+            await _context.AddAsync(vocab);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully created vocabulary (Guid:{Guid}) for user (UserId:{UserId})", pack.Guid, userId);
+            _logger.LogInformation("Successfully created vocabulary (Guid:{Guid}) for user (UserId:{UserId})", vocab.Guid, userId);
 
-            return RequestResult<Vocabulary>.Success(pack);
+            return RequestResult<Vocabulary>.Success(vocab);
         }
 
-        public async Task<RequestResult<Vocabulary>> PatchVocabularyAsync(int userId, Guid vocabGuid, PatchVocabularyRequest request)
+        public async Task<RequestResult<Vocabulary>> PatchVocabularyAsync(int userId, Guid guid, PatchVocabularyRequest request)
         {
             _logger.LogInformation("Attempting to patch a vocabulary for user (UserId:{UserId})", userId);
 
-            var id = await _packQueries.GetIdByGuidAsync(userId, vocabGuid);
+            var id = await _vocabularyQueries.GetIdByGuidAsync(userId, guid);
             if (!id.HasValue)
             {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", vocabGuid, userId);
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", guid, userId);
                 return RequestResult<Vocabulary>.Failure(ErrorCode.AccessDenied);
             }
 
-            var currentPack = await _packQueries.GetByIdAsync(userId, id.Value);
-            if (currentPack == null)
+            var currentVocab = await _vocabularyQueries.GetByIdAsync(userId, id.Value);
+            if (currentVocab == null)
             {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found for user (UserId:{UserId})", vocabGuid, userId);
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found for user (UserId:{UserId})", guid, userId);
                 return RequestResult<Vocabulary>.Failure(ErrorCode.VocabularyNotFound);
             }
 
-            var isPatched = currentPack.TryPatch(request);
+            var isPatched = currentVocab.TryPatch(request);
             if (!isPatched)
             {
-                _logger.LogError("TryPatch failed for vocabulary (Guid:{Guid}): Invalid Data", vocabGuid);
+                _logger.LogError("TryPatch failed for vocabulary (Guid:{Guid}): Invalid Data", guid);
                 return RequestResult<Vocabulary>.Failure(ErrorCode.InvalidData, "Failed to apply patch");
             }
 
 
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully patched vocabulary (Guid:{Guid}) for user (UserId:{UserId})", vocabGuid, userId);
+            _logger.LogInformation("Successfully patched vocabulary (Guid:{Guid}) for user (UserId:{UserId})", guid, userId);
 
-            return RequestResult<Vocabulary>.Success(currentPack);
+            return RequestResult<Vocabulary>.Success(currentVocab);
         }
 
-        //public async Task<MassRequestResult<VocabularyEntry>> ImportFromPackAsync(int userId, Guid packGuid);
-
-        public async Task<RequestResult<Guid>> RevokeVocabularyGuidAsync(int userId, Guid vocabGuid)
+        public async Task<RequestResult<Guid>> RevokeVocabularyGuidAsync(int userId, Guid guid)
         {
-            _logger.LogInformation("Attempting to revoke guid for pack (Guid:{Guid}) for user (UserId:{UserId})", vocabGuid, userId);
+            _logger.LogInformation("Attempting to revoke guid for vocabulary (Guid:{Guid}) for user (UserId:{UserId})", guid, userId);
 
-            var id = await _packQueries.GetIdByGuidAsync(userId, vocabGuid);
+            var id = await _vocabularyQueries.GetIdByGuidAsync(userId, guid);
             if (!id.HasValue)
             {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", vocabGuid, userId);
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", guid, userId);
                 return RequestResult<Guid>.Failure(ErrorCode.AccessDenied);
             }
 
-            var currentPack = await _packQueries.GetByIdAsync(userId, id.Value);
-            if (currentPack == null)
+            var currentVocab = await _vocabularyQueries.GetByIdAsync(userId, id.Value);
+            if (currentVocab == null)
             {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found for user (UserId:{UserId})", vocabGuid, userId);
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found for user (UserId:{UserId})", guid, userId);
                 return RequestResult<Guid>.Failure(ErrorCode.VocabularyNotFound);
             }
 
 
             var newGuid = Guid.NewGuid();
-            currentPack.Guid = newGuid;
+            currentVocab.Guid = newGuid;
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully revoked guid for vocabulary (Guid:{Guid}) for user (UserId:{UserId})", vocabGuid, userId);
+            _logger.LogInformation("Successfully revoked guid for vocabulary (Guid:{Guid}) for user (UserId:{UserId})", guid, userId);
 
             return RequestResult<Guid>.Success(newGuid);
         }
 
-        public async Task<RequestResult<bool>> RemoveVocabularyByGuidAsync(int userId, Guid vocabGuid)
+        public async Task<RequestResult<bool>> RemoveVocabularyByGuidAsync(int userId, Guid guid)
         {
-            _logger.LogInformation("Attempting to delete vocabulary (Guid:{Guid}) for user (UserId:{UserId})", vocabGuid, userId);
+            _logger.LogInformation("Attempting to delete vocabulary (Guid:{Guid}) for user (UserId:{UserId})", guid, userId);
 
-            var id = await _packQueries.GetIdByGuidAsync(userId, vocabGuid);
+            var id = await _vocabularyQueries.GetIdByGuidAsync(userId, guid);
             if (!id.HasValue)
             {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", vocabGuid, userId);
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", guid, userId);
                 return RequestResult<bool>.Failure(ErrorCode.AccessDenied);
             }
 
-            var currentPack = await _packQueries.GetByIdAsync(userId, id.Value);
-            if (currentPack == null)
+            var currentVocab = await _vocabularyQueries.GetByIdAsync(userId, id.Value);
+            if (currentVocab == null)
             {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found for user (UserId:{UserId})", vocabGuid, userId);
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found for user (UserId:{UserId})", guid, userId);
                 return RequestResult<bool>.Failure(ErrorCode.VocabularyNotFound);
             }
 
 
-            _context.Vocabularies.Remove(currentPack);
+            _context.Vocabularies.Remove(currentVocab);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully deleted vocabulary (Guid:{Guid}) for user (UserId:{UserId})", vocabGuid, userId);
+            _logger.LogInformation("Successfully deleted vocabulary (Guid:{Guid}) for user (UserId:{UserId})", guid, userId);
 
             return RequestResult<bool>.Success(true);
         }

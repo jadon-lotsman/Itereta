@@ -1,9 +1,8 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Mnemo.Contracts.Vocabulary;
-using Mnemo.Contracts.Vocabulary.Requests;
-using Mnemo.Data.Queries;
+using Mnemo.Contracts.Entry;
+using Mnemo.Contracts.Entry.Requests;
 using Mnemo.Services.VocabularyService;
 using Mnemo.Shared.Enums;
 using System.Security.Claims;
@@ -16,14 +15,12 @@ namespace Mnemo.Controllers
     public class EntryController : ControllerBase
     {
         private readonly IMapper _mapper;
-        private readonly VocabularyEntryQueries _entryQueries;
         private readonly EntryManagementService _entryService;
 
 
-        public EntryController(IMapper mapper, VocabularyEntryQueries entryQueries, EntryManagementService entryService)
+        public EntryController(IMapper mapper, EntryManagementService entryService)
         {
             _mapper = mapper;
-            _entryQueries = entryQueries;
             _entryService = entryService;
         }
 

@@ -1,18 +1,17 @@
-﻿using Mnemo.Contracts.Pack.Requests;
+﻿using Mnemo.Contracts.Vocabulary.Requests;
 using Mnemo.Data.Entities;
 using Mnemo.Shared.Enums;
-using System.Runtime.CompilerServices;
 
 namespace Mnemo.Shared.Extensions
 {
     public static class VocabularyExstension
     {
-        public static bool TryPatch(this Vocabulary pack, PatchVocabularyRequest patch)
+        public static bool TryPatch(this Vocabulary vocab, PatchVocabularyRequest patch)
         {
             string? _name = null;
             if (patch.Name != null)
             {
-                var normalized = pack.Name.RemoveMultispaces().Capitalize();
+                var normalized = vocab.Name.RemoveMultispaces().Capitalize();
                 if (string.IsNullOrWhiteSpace(normalized))
                     return false;
 
@@ -22,7 +21,7 @@ namespace Mnemo.Shared.Extensions
             string? _description = null;
             if (patch.Description != null)
             {
-                var normalized = pack.Description.RemoveMultispaces().Capitalize();
+                var normalized = vocab.Description.RemoveMultispaces().Capitalize();
                 if (string.IsNullOrWhiteSpace(_description))
                     return false;
 
@@ -40,11 +39,11 @@ namespace Mnemo.Shared.Extensions
 
 
             if (_name != null)
-                pack.Name = _name;
+                vocab.Name = _name;
             if (_description != null)
-                pack.Description = _description;
+                vocab.Description = _description;
             if (_visibility != null)
-                pack.Visibility = _visibility.Value;
+                vocab.Visibility = _visibility.Value;
 
             return true;
         }

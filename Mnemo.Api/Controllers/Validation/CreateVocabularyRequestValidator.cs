@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using Mnemo.Contracts.Pack.Requests;
+using Mnemo.Contracts.Vocabulary.Requests;
 
 namespace Mnemo.Controllers.Validation
 {
@@ -8,14 +8,14 @@ namespace Mnemo.Controllers.Validation
         public CreateVocabularyRequestValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Pack name is required")
+                .NotEmpty().WithMessage("Vocabulary name is required")
                 .Must(VocabularyRules.IsValidName)
-                .WithMessage("Lorem Ipsum Name");
+                .WithMessage("Vocabulary name is required");
 
             RuleFor(x => x.Description)
-                .NotEmpty().WithMessage("Pack name is required")
+                .NotEmpty().WithMessage("Vocabulary description is required")
                 .Must(VocabularyRules.IsValidDescription)
-                .WithMessage("Lorem Ipsum Description");
+                .WithMessage("Vocabulary description is required");
         }
     }
 }

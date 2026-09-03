@@ -1,4 +1,4 @@
-﻿namespace Mnemo.Contracts.Vocabulary
+﻿namespace Mnemo.Contracts.Entry
 {
     public class VocabularyStatisticsResponse
     {

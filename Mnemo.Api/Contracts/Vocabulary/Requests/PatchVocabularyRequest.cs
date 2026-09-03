@@ -1,5 +1,4 @@
-﻿
-namespace Mnemo.Contracts.Pack.Requests
+﻿namespace Mnemo.Contracts.Vocabulary.Requests
 {
     public class PatchVocabularyRequest
     {

@@ -1,5 +1,4 @@
-﻿
-namespace Mnemo.Contracts.Pack
+﻿namespace Mnemo.Contracts.Vocabulary
 {
     public class VocabularyResponse
     {

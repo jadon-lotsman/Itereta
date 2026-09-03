@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Mnemo.Data.Entities;
-using Mnemo.Shared.Enums;
+﻿using Mnemo.Shared.Enums;
 
 namespace Mnemo.Shared
 {

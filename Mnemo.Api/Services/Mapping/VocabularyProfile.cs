@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using Mnemo.Contracts.Pack;
-using Mnemo.Contracts.Pack.Requests;
+using Mnemo.Contracts.Entry.Requests;
+using Mnemo.Contracts.Vocabulary;
 using Mnemo.Contracts.Vocabulary.Requests;
 using Mnemo.Data.Entities;
 using Mnemo.Shared;

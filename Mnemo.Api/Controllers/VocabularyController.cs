@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Mnemo.Contracts.Pack;
-using Mnemo.Contracts.Pack.Requests;
+using Mnemo.Contracts.Entry;
 using Mnemo.Contracts.Vocabulary;
+using Mnemo.Contracts.Vocabulary.Requests;
 using Mnemo.Data.Queries;
 using Mnemo.Services.VocabularyService;
 using Mnemo.Shared.Enums;
@@ -37,26 +37,26 @@ namespace Mnemo.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllPublic()
         {
-            var packs = await _vocabularyQueries.GetPublishedAsync();
+            var vocabs = await _vocabularyQueries.GetPublishedAsync();
 
-            var packsResponse = _mapper.Map<List<VocabularyResponse>>(packs);
-            return Ok(packsResponse);
+            var vocabsResponse = _mapper.Map<List<VocabularyResponse>>(vocabs);
+            return Ok(vocabsResponse);
         }
 
         [HttpGet("{guid}")]
         public async Task<IActionResult> GetVocabularyByGuid([FromRoute] Guid guid)
         {
-            var pack = await _vocabularyQueries.GetByGuidAsync(UserId, guid);
+            var vocab = await _vocabularyQueries.GetByGuidAsync(UserId, guid);
 
-            if (pack == null)
+            if (vocab == null)
                 return NotFound();
 
-            var packResponse = _mapper.Map<VocabularyResponse>(pack);
-            return Ok(packResponse);
+            var vocabResponse = _mapper.Map<VocabularyResponse>(vocab);
+            return Ok(vocabResponse);
         }
 
         [HttpGet("{guid}/search")]
-        public async Task<IActionResult> SearchInVocabularyByQuery(Guid guid, [FromQuery] string query)
+        public async Task<IActionResult> SearchInVocabulary(Guid guid, [FromQuery] string query)
         {
             var id = await _vocabularyQueries.GetIdByGuidAsync(UserId, guid);
 
@@ -74,7 +74,7 @@ namespace Mnemo.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> CreatePack([FromBody] CreateVocabularyRequest request)
+        public async Task<IActionResult> CreateVocabulary([FromBody] CreateVocabularyRequest request)
         {
             var result = await _vocabularyService.CreateVocabularyAsync(UserId, request);
 
@@ -88,12 +88,12 @@ namespace Mnemo.Controllers
                 };
             }
 
-            var packResponse = _mapper.Map<VocabularyResponse>(result.Value);
-            return Ok(packResponse);
+            var vocabResponse = _mapper.Map<VocabularyResponse>(result.Value);
+            return Ok(vocabResponse);
         }
 
         [HttpPost("{guid}")]
-        public async Task<IActionResult> RevokePackGuid(Guid guid)
+        public async Task<IActionResult> RevokeVocabularyGuid(Guid guid)
         {
             var result = await _vocabularyService.RevokeVocabularyGuidAsync(UserId, guid);
 
@@ -106,11 +106,11 @@ namespace Mnemo.Controllers
                 };
             }
 
-            return Ok(new { NewGuid = result.Value });
+            return Ok(new { newGuid = result.Value });
         }
 
         [HttpDelete("{guid}")]
-        public async Task<IActionResult> DeletePack(Guid guid)
+        public async Task<IActionResult> DeleteVocabulary(Guid guid)
         {
             var result = await _vocabularyService.RemoveVocabularyByGuidAsync(UserId, guid);
 

@@ -1,4 +1,4 @@
-﻿using Mnemo.Contracts.Vocabulary;
+﻿using Mnemo.Contracts.Entry;
 using Mnemo.Shared.Enums;
 
 namespace Mnemo.Data.Entities

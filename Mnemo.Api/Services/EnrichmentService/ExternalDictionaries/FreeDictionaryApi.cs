@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.Extensions.Caching.Memory;
-using Mnemo.Contracts.Vocabulary;
+using Mnemo.Contracts.Entry;
 using Mnemo.Shared;
 using Mnemo.Shared.Enums;
 using System.Text.Json;

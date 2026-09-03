@@ -1,4 +1,4 @@
-﻿namespace Mnemo.Contracts.Vocabulary.Requests
+﻿namespace Mnemo.Contracts.Entry.Requests
 {
     public class CreateEntryRequest
     {
