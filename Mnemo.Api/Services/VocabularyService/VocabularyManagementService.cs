@@ -146,7 +146,7 @@ namespace Mnemo.Services.VocabularyService
 
         public async Task<RequestResult<Vocabulary>> CreateVocabularyAsync(int userId, CreateVocabularyRequest request)
         {
-            _logger.LogInformation("Attempting to create a vocabulary for user (UserId:{UserId})", userId);
+            _logger.LogInformation("Creating a vocabulary for user (UserId:{UserId})...", userId);
 
             var validationResult = await _createVocabularyValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
@@ -166,34 +166,18 @@ namespace Mnemo.Services.VocabularyService
 
             var results = new List<RequestResult<VocabularyEntry>>();
 
+            var validationResults = await _createEntryValidator.ValidateBatchAsync(request.Entries, _logger);
 
-            _logger.LogDebug("Requests validating from user (UserId:{UserId})...", userId);
-
-            var validReq = new List<CreateEntryRequest>();
-            foreach (var req in request.Entries)
+            if (validationResults.IsCriticalFailure)
             {
-                var validationEntryResult = await _createEntryValidator.ValidateAsync(req);
-                if (!validationEntryResult.IsValid)
-                {
-                    var messages = string.Join("; ", validationEntryResult.Errors.Select(e => e.ErrorMessage));
-
-                    _logger.LogWarning("CreateEntryRequest (UserId:{UserId}) is not valid: {messages}", userId, messages);
-                    results.Add(RequestResult<VocabularyEntry>.Failure(ErrorCode.InvalidData, messages));
-                    continue;
-                }
-
-                validReq.Add(req);
-            }
-
-            if (!validReq.Any())
-            {
-                var messages = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
-                _logger.LogInformation("All requests ({Count}) is not valid from user (UserId:{UserId}): {messages}", request.Entries.Length, userId, messages);
+                _logger.LogInformation("All requests ({Count}) is not valid from user (UserId:{UserId})!", request.Entries.Length, userId);
+                var messages = string.Join("; ", validationResults.FailedResults.Select(e => e.ErrorMessage));
                 return RequestResult<Vocabulary>.Failure(ErrorCode.InvalidData, string.Join("; ", messages));
             }
 
 
-            var validNewEntries = _mapper.Map<List<VocabularyEntry>>(validReq);
+            var succeedRequests = validationResults.SucceededResults.Select(r => r.Value!);
+            var validNewEntries = _mapper.Map<List<VocabularyEntry>>(succeedRequests);
 
             var vocab = _mapper.Map<Vocabulary>(request);
             vocab.OwnerId = userId;
@@ -202,7 +186,7 @@ namespace Mnemo.Services.VocabularyService
 
             await _context.AddAsync(vocab);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully created vocabulary (Guid:{Guid}) for user (UserId:{UserId})", vocab.Guid, userId);
+            _logger.LogInformation("Successfully created vocabulary (Guid:{Guid}) for user (UserId:{UserId})!", vocab.Guid, userId);
 
             return RequestResult<Vocabulary>.Success(vocab);
         }

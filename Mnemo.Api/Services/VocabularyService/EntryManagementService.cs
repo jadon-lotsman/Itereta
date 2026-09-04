@@ -109,57 +109,40 @@ namespace Mnemo.Services.VocabularyService
             return result.Results.First();
         }
 
-        public async Task<MassRequestResult<VocabularyEntry>> CreateEntriesAsync(int userId, Guid guid, List<CreateEntryRequest> requests)
+        public async Task<BatchRequestResult<VocabularyEntry>> CreateEntriesAsync(int userId, Guid guid, List<CreateEntryRequest> requests)
         {
-            _logger.LogInformation("Attempting to create {Count} vocabulary entries for user (UserId:{UserId})", requests.Count, userId);
+            _logger.LogInformation("Creating {Count} vocabulary entries for user (UserId:{UserId})...", requests.Count, userId);
 
             int? id = await _vocabularyQueries.GetIdByGuidAsync(userId, guid);
             if (!id.HasValue)
             {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", guid, userId);
-                return MassRequestResult<VocabularyEntry>.AbsolutelyFailure(requests.Count, ErrorCode.AccessDenied);
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})!", guid, userId);
+                return BatchRequestResult<VocabularyEntry>.CriticalFailure(ErrorCode.AccessDenied);
             }
 
             if (!await _vocabularyQueries.ExistsByIdAsync(userId, id.Value))
             {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found", guid);
-                return MassRequestResult<VocabularyEntry>.AbsolutelyFailure(requests.Count, ErrorCode.VocabularyNotFound);
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found!", guid);
+                return BatchRequestResult<VocabularyEntry>.CriticalFailure(ErrorCode.VocabularyNotFound);
             }
 
 
-            var results = new List<RequestResult<VocabularyEntry>>();
+            var validationResults = await _createValidator.ValidateBatchAsync(requests, _logger);
 
-
-            _logger.LogDebug("Requests validating from user (UserId:{UserId})...", userId);
-
-            var validReq = new List<CreateEntryRequest>();
-            foreach (var req in requests)
+            if (validationResults.IsCriticalFailure)
             {
-                var validationResult = await _createValidator.ValidateAsync(req);
-                if (!validationResult.IsValid)
-                {
-                    var messages = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
-
-                    _logger.LogWarning("CreateEntryRequest (UserId:{UserId}) is not valid: {messages}", userId, messages);
-                    results.Add(RequestResult<VocabularyEntry>.Failure(ErrorCode.InvalidData, messages));
-                    continue;
-                }
-
-                validReq.Add(req);
+                _logger.LogInformation("All requests ({Count}) is not valid from user (UserId:{UserId})!", requests.Count, userId);
+                var messages = string.Join("; ", validationResults.FailedResults.Select(e => e.ErrorMessage));
+                return BatchRequestResult<VocabularyEntry>.CriticalFailure(ErrorCode.InvalidData, messages);
             }
 
-            if (!validReq.Any())
-            {
-                _logger.LogInformation("All requests ({Count}) is not valid from user (UserId:{UserId})", requests.Count, userId);
-                return MassRequestResult<VocabularyEntry>.PartialSuccess(results);
-            }
+            var succeedRequests = validationResults.SucceededResults.Select(r => r.Value!);
+            var entries = _mapper.Map<List<VocabularyEntry>>(succeedRequests);
 
-
-            var validEntries = _mapper.Map<List<VocabularyEntry>>(validReq);
 
             _logger.LogDebug("Exclude entry duplicates from user (UserId:{UserId})...", userId);
 
-            var foreigns = validReq
+            var foreigns = succeedRequests
                 .Select(r => r.Foreign)
                 .Where(f => !string.IsNullOrWhiteSpace(f))
                 .Distinct()
@@ -168,14 +151,14 @@ namespace Mnemo.Services.VocabularyService
             var existingKeys = await _entryQueries
                 .GetExistingKeysAsync(userId, id.Value, foreigns!);
 
-
+            var creationResults = new List<RequestResult<VocabularyEntry>>();
             var entriesToAdd = new List<VocabularyEntry>();
-            foreach (var entry in validEntries)
+            foreach (var entry in entries)
             {
                 if (existingKeys.Contains((entry.Foreign, entry.PartOfSpeech)))
                 {
                     _logger.LogWarning("Duplicate entry for user (UserId:{UserId}): Foreign:{Foreign}, PartOfSpeech:{PartOfSpeech}", userId, entry.Foreign, entry.PartOfSpeech);
-                    results.Add(RequestResult<VocabularyEntry>.Failure(ErrorCode.DuplicateEntry, $"Entry '{entry.Foreign}' ({entry.PartOfSpeech}) already exists"));
+                    creationResults.Add(RequestResult<VocabularyEntry>.Failure(ErrorCode.DuplicateEntry, $"Entry '{entry.Foreign}' ({entry.PartOfSpeech}) already exists"));
                     continue;
                 }
 
@@ -187,7 +170,7 @@ namespace Mnemo.Services.VocabularyService
                 };
 
                 entriesToAdd.Add(entry);
-                results.Add(RequestResult<VocabularyEntry>.Success(entry));
+                creationResults.Add(RequestResult<VocabularyEntry>.Success(entry));
             }
 
 
@@ -195,10 +178,10 @@ namespace Mnemo.Services.VocabularyService
             {
                 await _context.VocabularyEntries.AddRangeAsync(entriesToAdd);
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("Created {Count} vocabulary entry for user (UserId:{UserId})", entriesToAdd.Count, userId);
+                _logger.LogInformation("Created {Count} vocabulary entry for user (UserId:{UserId})!", entriesToAdd.Count, userId);
             }
 
-            return MassRequestResult<VocabularyEntry>.PartialSuccess(results);
+            return BatchRequestResult<VocabularyEntry>.Return(creationResults);
         }
 
         public async Task<RequestResult<VocabularyEntry>> PatchEntryAsync(int userId, Guid guid, int entryId, PatchEntryRequest request)
