@@ -13,7 +13,7 @@ namespace Mnemo.Shared
 
         public BatchRequestResult(List<RequestResult<T>> results)
         {
-            IsCriticalFailure = false;
+            IsCriticalFailure = !results.Any(r => r.IsSuccess);
             Results = results;
         }
 

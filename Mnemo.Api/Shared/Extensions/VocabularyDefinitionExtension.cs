@@ -111,5 +111,12 @@ namespace Mnemo.Shared.Extensions
 
             return true;
         }
+
+        public static IEnumerable<T> RemoveKeyDuplicates<T>(this IEnumerable<T> source) where T : VocabularyDefinition
+        {
+            return source
+                .GroupBy(item => new { item.Foreign, item.PartOfSpeech })
+                .Select(group => group.First());
+        }
     }
 }

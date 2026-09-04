@@ -106,7 +106,7 @@ namespace Mnemo.Services.VocabularyService
         public async Task<RequestResult<VocabularyEntry>> CreateEntryAsync(int userId, Guid guid, CreateEntryRequest request)
         {
             var result = await CreateEntriesAsync(userId, guid, new List<CreateEntryRequest>() { request });
-            return result.Results.First();
+            return result.SucceededResults.FirstOrDefault() ?? result.FailedResults.First();
         }
 
         public async Task<BatchRequestResult<VocabularyEntry>> CreateEntriesAsync(int userId, Guid guid, List<CreateEntryRequest> requests)
@@ -117,71 +117,95 @@ namespace Mnemo.Services.VocabularyService
             if (!id.HasValue)
             {
                 _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})!", guid, userId);
-                return BatchRequestResult<VocabularyEntry>.CriticalFailure(ErrorCode.AccessDenied);
-            }
-
-            if (!await _vocabularyQueries.ExistsByIdAsync(userId, id.Value))
-            {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found!", guid);
                 return BatchRequestResult<VocabularyEntry>.CriticalFailure(ErrorCode.VocabularyNotFound);
             }
 
 
             var validationResults = await _createValidator.ValidateBatchAsync(requests, _logger);
 
+            var messages = string.Join("; ", validationResults.FailedResults.Select(e => e.ErrorMessage));
+            var validationErrors = BatchRequestResult<VocabularyEntry>.CriticalFailure(ErrorCode.InvalidData, messages);
+
             if (validationResults.IsCriticalFailure)
-            {
-                _logger.LogInformation("All requests ({Count}) is not valid from user (UserId:{UserId})!", requests.Count, userId);
-                var messages = string.Join("; ", validationResults.FailedResults.Select(e => e.ErrorMessage));
-                return BatchRequestResult<VocabularyEntry>.CriticalFailure(ErrorCode.InvalidData, messages);
-            }
+                return validationErrors;
+
 
             var succeedRequests = validationResults.SucceededResults.Select(r => r.Value!);
-            var entries = _mapper.Map<List<VocabularyEntry>>(succeedRequests);
+            var entries =
+                _mapper.Map<List<VocabularyEntry>>(succeedRequests)
+                .RemoveKeyDuplicates();
+
+            var filterResults = await FilterVocabularyDuplicatesAsync(userId, id.Value, entries);
+
+            if (filterResults.IsCriticalFailure)
+                return filterResults;
 
 
-            _logger.LogDebug("Exclude entry duplicates from user (UserId:{UserId})...", userId);
+            var entriesToAdd = filterResults.SucceededResults.Select(r => r.Value!).ToList();
 
-            var foreigns = succeedRequests
-                .Select(r => r.Foreign)
-                .Where(f => !string.IsNullOrWhiteSpace(f))
-                .Distinct()
-                .ToList();
-
-            var existingKeys = await _entryQueries
-                .GetExistingKeysAsync(userId, id.Value, foreigns!);
-
-            var creationResults = new List<RequestResult<VocabularyEntry>>();
-            var entriesToAdd = new List<VocabularyEntry>();
-            foreach (var entry in entries)
+            foreach (var entry in entriesToAdd)
             {
-                if (existingKeys.Contains((entry.Foreign, entry.PartOfSpeech)))
-                {
-                    _logger.LogWarning("Duplicate entry for user (UserId:{UserId}): Foreign:{Foreign}, PartOfSpeech:{PartOfSpeech}", userId, entry.Foreign, entry.PartOfSpeech);
-                    creationResults.Add(RequestResult<VocabularyEntry>.Failure(ErrorCode.DuplicateEntry, $"Entry '{entry.Foreign}' ({entry.PartOfSpeech}) already exists"));
-                    continue;
-                }
-
                 entry.VocabularyId = id.Value;
                 entry.RepetitionState = new RepetitionState()
                 {
                     EasinessFactor = _sm2.Value.InitEF,
                     RepetitionInterval = _sm2.Value.MinInterval
                 };
-
-                entriesToAdd.Add(entry);
-                creationResults.Add(RequestResult<VocabularyEntry>.Success(entry));
             }
-
 
             if (entriesToAdd.Any())
             {
                 await _context.VocabularyEntries.AddRangeAsync(entriesToAdd);
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("Created {Count} vocabulary entry for user (UserId:{UserId})!", entriesToAdd.Count, userId);
+                _logger.LogInformation("Created {Count} vocabulary entry (UserId:{UserId}, VocabId:{VocabId})!", entriesToAdd.Count, userId, id.Value);
             }
 
-            return BatchRequestResult<VocabularyEntry>.Return(creationResults);
+            var results = validationErrors.Results.Concat(filterResults.Results).ToList();
+            return BatchRequestResult<VocabularyEntry>.Return(results);
+        }
+
+        private async Task<BatchRequestResult<VocabularyEntry>> FilterVocabularyDuplicatesAsync(int userId, int vocabId, IEnumerable<VocabularyEntry> entries)
+        {
+            var entryList = entries.ToList();
+            int total = entryList.Count;
+
+            _logger.LogDebug("Starting duplicate filter for {Count} entries (UserId: {UserId}, VocabId: {VocabId})...", total, userId, vocabId);
+
+            var foreigns = entryList
+                .Select(e => e.Foreign)
+                .Where(f => !string.IsNullOrWhiteSpace(f))
+                .Distinct()
+                .ToList();
+
+            var existingKeys = await _entryQueries
+                .GetExistingKeysAsync(userId, vocabId, foreigns);
+
+            var results = new List<RequestResult<VocabularyEntry>>(total);
+
+            foreach (var entry in entries)
+            {
+                if (existingKeys.Contains((entry.Foreign, entry.PartOfSpeech)))
+                {
+                    _logger.LogWarning("Duplicate entry detected (UserId: {UserId}, VocabId: {VocabId}): Foreign:{Foreign}, PartOfSpeech:{PartOfSpeech}", userId, vocabId, entry.Foreign, entry.PartOfSpeech);
+                    results.Add(RequestResult<VocabularyEntry>.Failure(ErrorCode.DuplicateEntry, $"Entry '{entry.Foreign}' with part of speech '{entry.PartOfSpeech}' already exists"));
+                }
+                else
+                {
+                    results.Add(RequestResult<VocabularyEntry>.Success(entry));
+                }
+            }
+
+            int succeeded = results.Count(r => r.IsSuccess);
+            int failed = total - succeeded;
+
+            if (failed == total)
+                _logger.LogWarning("Duplicate filter completed (UserId:{UserId}, VocabId:{VocabId}): all {Total} entries are diplicates!", userId, vocabId, total);
+            else if (failed > 0)
+                _logger.LogInformation("Duplicate filter completed (UserId:{UserId}, VocabId:{VocabId}): {Succeeded} unique, {Failed} duplicates out of {Total}!", userId, vocabId, succeeded, failed, total);
+            else
+                _logger.LogDebug("Duplicate filter completed (UserId:{UserId}, VocabId:{VocabId}): all {Total} entries are unique!", userId, vocabId, total);
+
+            return BatchRequestResult<VocabularyEntry>.Return(results);
         }
 
         public async Task<RequestResult<VocabularyEntry>> PatchEntryAsync(int userId, Guid guid, int entryId, PatchEntryRequest request)
@@ -192,7 +216,7 @@ namespace Mnemo.Services.VocabularyService
             if (!id.HasValue)
             {
                 _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", guid, userId);
-                return RequestResult<VocabularyEntry>.Failure(ErrorCode.AccessDenied);
+                return RequestResult<VocabularyEntry>.Failure(ErrorCode.VocabularyNotFound);
             }
 
             var validationResult = await _patchValidator.ValidateAsync(request);
@@ -279,7 +303,7 @@ namespace Mnemo.Services.VocabularyService
             if (!id.HasValue)
             {
                 _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", guid, userId);
-                return RequestResult<bool>.Failure(ErrorCode.AccessDenied);
+                return RequestResult<bool>.Failure(ErrorCode.VocabularyNotFound);
             }
 
             var currentEntry = await _entryQueries.GetByIdAsync(userId, id.Value, entryId);

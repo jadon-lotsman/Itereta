@@ -177,11 +177,13 @@ namespace Mnemo.Services.VocabularyService
 
 
             var succeedRequests = validationResults.SucceededResults.Select(r => r.Value!);
-            var validNewEntries = _mapper.Map<List<VocabularyEntry>>(succeedRequests);
+            var validNewEntries =
+                _mapper.Map<List<VocabularyEntry>>(succeedRequests)
+                .RemoveKeyDuplicates();
 
             var vocab = _mapper.Map<Vocabulary>(request);
             vocab.OwnerId = userId;
-            vocab.Entries = validNewEntries;
+            vocab.Entries = validNewEntries.ToList();
 
 
             await _context.AddAsync(vocab);

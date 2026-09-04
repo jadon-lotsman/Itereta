@@ -33,15 +33,12 @@ namespace Mnemo.Shared.Extensions
             int succeeded = results.Count(r => r.IsSuccess);
             int failed = total - succeeded;
 
-            if (failed > 0)
-            {
-                logger?.LogInformation("Batch validation completed for items (Type:{ItemType}): {Succeeded} succeeded, {Failed} failed out of {Total}!",
-                    typeof(T).Name, succeeded, failed, total);
-            }
+            if (failed == total)
+                logger?.LogWarning("All {Total} items (Type:{ItemType}) is not valid!", total, typeof(T).Name);
+            else if (failed > 0)
+                logger?.LogInformation("Batch validation completed for items (Type:{ItemType}): {Succeeded} succeeded, {Failed} failed out of {Total}!", typeof(T).Name, succeeded, failed, total);
             else
-            {
                 logger?.LogDebug("Batch validation completed for items (Type:{ItemType}): all {Total} items succeeded!", typeof(T).Name, total);
-            }
 
             return BatchRequestResult<T>.Return(results);
         }
