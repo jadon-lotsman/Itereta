@@ -30,26 +30,31 @@ namespace Mnemo.Services.RepetitionService.Strategies
         }
 
 
-        public async Task<List<RepetitionTask>> GetTasksAsync(int userId, int vocabId)
+        public async Task<List<RepetitionTask>> GetTasksAsync(int userId)
         {
+            _logger.LogInformation("Starting generate {Count} tasks for user (UserId:{UserId})...", take, userId);
+
+            var stopwatch = Stopwatch.StartNew();
             int take = _options.Value.RepetitionTaskCount;
 
-            _logger.LogInformation("Attempting to generate {Count} tasks for user (UserId:{UserId})", take, userId);
-            var stopwatch = Stopwatch.StartNew();
+            var query 
+                = await GetTargetEntriesQuery(userId, take);
 
-            var query = await GetTargetEntriesQuery(userId, vocabId, take);
             var targetEntries = await query
+                .Include(e => e.RepetitionState)
+                .Include(e => e.Vocabulary)
                 .ToListAsync();
 
 
-            if (!targetEntries.Any())
+            if (targetEntries.Any())
+            {
+                _logger.LogDebug("Retrieved {Count} entries for user (UserId:{UserId})", targetEntries.Count, userId);
+            }
+            else
             {
                 _logger.LogWarning("No entries found for user (UserId:{UserId})", userId);
                 return new List<RepetitionTask>();
             }
-
-            _logger.LogDebug("Retrieved {Count} entries for user (UserId:{UserId}). Tasks generating...", targetEntries.Count, userId);
-
 
             var tasks = new List<RepetitionTask>();
             var index = 0;
@@ -69,12 +74,12 @@ namespace Mnemo.Services.RepetitionService.Strategies
             }
 
             stopwatch.Stop();
-            _logger.LogInformation("Successfully generated {TaskCount} tasks in {DurationMs} ms for user (UserId:{UserId})", tasks.Count, stopwatch.ElapsedMilliseconds, userId);
+            _logger.LogInformation("Successfully generated {TaskCount} tasks in {DurationMs} ms for user (UserId:{UserId})!", tasks.Count, stopwatch.ElapsedMilliseconds, userId);
 
             return tasks;
         }
 
 
-        protected abstract Task<IQueryable<VocabularyEntry>> GetTargetEntriesQuery(int userId, int vocabId, int take);
+        protected abstract Task<IQueryable<VocabularyEntry>> GetTargetEntriesQuery(int userId, int take);
     }
 }

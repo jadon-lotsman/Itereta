@@ -1,12 +1,14 @@
 ﻿using AutoMapper;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Mnemo.Contracts.Entry;
 using Mnemo.Contracts.Entry.Requests;
 using Mnemo.Contracts.Vocabulary.Requests;
 using Mnemo.Data;
 using Mnemo.Data.Entities;
 using Mnemo.Data.Queries;
+using Mnemo.Services.RepetitionService;
 using Mnemo.Shared;
 using Mnemo.Shared.Enums;
 using Mnemo.Shared.Extensions;
@@ -19,10 +21,12 @@ namespace Mnemo.Services.VocabularyService
         private readonly IValidator<CreateVocabularyRequest> _createVocabularyValidator;
         private readonly IValidator<CreateEntryRequest> _createEntryValidator;
         private readonly IMapper _mapper;
+        private readonly IOptions<SM2Options> _sm2;
         private readonly AppDbContext _context;
         private readonly AccountQueries _accountQueries;
         private readonly VocabularyEntryQueries _entryQueries;
         private readonly VocabularyQueries _vocabularyQueries;
+
 
 
 
@@ -31,6 +35,7 @@ namespace Mnemo.Services.VocabularyService
             IValidator<CreateVocabularyRequest> createVocabularyValidator,
             IValidator<CreateEntryRequest> createEntryValidator,
             IMapper mapper,
+            IOptions<SM2Options> sm2,
             AppDbContext context,
             AccountQueries accountQueries,
             VocabularyEntryQueries entryQueries,
@@ -40,6 +45,7 @@ namespace Mnemo.Services.VocabularyService
             _createVocabularyValidator = createVocabularyValidator;
             _createEntryValidator = createEntryValidator;
             _mapper = mapper;
+            _sm2 = sm2;
             _context = context;
             _accountQueries = accountQueries;
             _entryQueries = entryQueries;
@@ -156,7 +162,6 @@ namespace Mnemo.Services.VocabularyService
                 return RequestResult<Vocabulary>.Failure(ErrorCode.InvalidData, string.Join("; ", messages));
             }
 
-
             if (!await _accountQueries.ExistsByIdAsync(userId))
             {
                 _logger.LogWarning("User (UserId:{UserId}) not found", userId);
@@ -164,26 +169,33 @@ namespace Mnemo.Services.VocabularyService
             }
 
 
-            var results = new List<RequestResult<VocabularyEntry>>();
-
             var validationResults = await _createEntryValidator.ValidateBatchAsync(request.Entries, _logger);
 
             if (validationResults.IsCriticalFailure)
             {
-                _logger.LogInformation("All requests ({Count}) is not valid from user (UserId:{UserId})!", request.Entries.Length, userId);
                 var messages = string.Join("; ", validationResults.FailedResults.Select(e => e.ErrorMessage));
                 return RequestResult<Vocabulary>.Failure(ErrorCode.InvalidData, string.Join("; ", messages));
             }
 
 
             var succeedRequests = validationResults.SucceededResults.Select(r => r.Value!);
-            var validNewEntries =
+            var entriesToAdd =
                 _mapper.Map<List<VocabularyEntry>>(succeedRequests)
-                .RemoveKeyDuplicates();
+                .RemoveKeyDuplicates()
+                .ToList();
+
+            foreach (var entry in entriesToAdd)
+            {
+                entry.RepetitionState = new RepetitionState()
+                {
+                    EasinessFactor = _sm2.Value.InitEF,
+                    RepetitionInterval = _sm2.Value.MinInterval
+                };
+            }
 
             var vocab = _mapper.Map<Vocabulary>(request);
             vocab.OwnerId = userId;
-            vocab.Entries = validNewEntries.ToList();
+            vocab.Entries = entriesToAdd;
 
 
             await _context.AddAsync(vocab);
@@ -197,17 +209,10 @@ namespace Mnemo.Services.VocabularyService
         {
             _logger.LogInformation("Attempting to patch a vocabulary for user (UserId:{UserId})", userId);
 
-            var id = await _vocabularyQueries.GetIdByGuidAsync(userId, guid);
-            if (!id.HasValue)
-            {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", guid, userId);
-                return RequestResult<Vocabulary>.Failure(ErrorCode.AccessDenied);
-            }
-
-            var currentVocab = await _vocabularyQueries.GetByIdAsync(userId, id.Value);
+            var currentVocab = await _vocabularyQueries.GetByGuidAsync(userId, guid);
             if (currentVocab == null)
             {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found for user (UserId:{UserId})", guid, userId);
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", guid, userId);
                 return RequestResult<Vocabulary>.Failure(ErrorCode.VocabularyNotFound);
             }
 
@@ -229,17 +234,10 @@ namespace Mnemo.Services.VocabularyService
         {
             _logger.LogInformation("Attempting to revoke guid for vocabulary (Guid:{Guid}) for user (UserId:{UserId})", guid, userId);
 
-            var id = await _vocabularyQueries.GetIdByGuidAsync(userId, guid);
-            if (!id.HasValue)
-            {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", guid, userId);
-                return RequestResult<Guid>.Failure(ErrorCode.AccessDenied);
-            }
-
-            var currentVocab = await _vocabularyQueries.GetByIdAsync(userId, id.Value);
+            var currentVocab = await _vocabularyQueries.GetByGuidAsync(userId, guid);
             if (currentVocab == null)
             {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found for user (UserId:{UserId})", guid, userId);
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", guid, userId);
                 return RequestResult<Guid>.Failure(ErrorCode.VocabularyNotFound);
             }
 
@@ -256,17 +254,10 @@ namespace Mnemo.Services.VocabularyService
         {
             _logger.LogInformation("Attempting to delete vocabulary (Guid:{Guid}) for user (UserId:{UserId})", guid, userId);
 
-            var id = await _vocabularyQueries.GetIdByGuidAsync(userId, guid);
-            if (!id.HasValue)
-            {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", guid, userId);
-                return RequestResult<bool>.Failure(ErrorCode.AccessDenied);
-            }
-
-            var currentVocab = await _vocabularyQueries.GetByIdAsync(userId, id.Value);
+            var currentVocab = await _vocabularyQueries.GetByGuidAsync(userId, guid);
             if (currentVocab == null)
             {
-                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found for user (UserId:{UserId})", guid, userId);
+                _logger.LogWarning("Vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", guid, userId);
                 return RequestResult<bool>.Failure(ErrorCode.VocabularyNotFound);
             }
 

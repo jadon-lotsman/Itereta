@@ -24,9 +24,6 @@ namespace Mnemo.Data.Queries
 
 
         // Getters
-        public async Task<int?> GetOriginIdAsync(int ownerId)
-            => await _context.Vocabularies.Where(p => p.OwnerId == ownerId && p.IsOrigin).Select(v => v.Id).FirstOrDefaultAsync();
-
         public async Task<Vocabulary?> GetByGuidAsync(int ownerId, Guid guid)
             => await GetVocabByGuidSecuredQuery(ownerId, guid).FirstOrDefaultAsync();
 

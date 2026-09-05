@@ -130,7 +130,7 @@ namespace Mnemo.Data.Migrations
                     b.Property<Guid>("Guid")
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("IsOrigin")
+                    b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")

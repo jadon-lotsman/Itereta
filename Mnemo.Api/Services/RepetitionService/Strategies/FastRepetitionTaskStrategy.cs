@@ -24,13 +24,13 @@ namespace Mnemo.Services.RepetitionService.Strategies
         }
 
 
-        protected override async Task<IQueryable<VocabularyEntry>> GetTargetEntriesQuery(int userId, int vocabId, int take)
+        protected override async Task<IQueryable<VocabularyEntry>> GetTargetEntriesQuery(int userId, int take)
         {
-            var priorityEntriesQuery = _entryQueries
-                .GetEntriesByVocabularyIdQuery(userId, vocabId)
-                .Include(e => e.RepetitionState)
-                .Include(e => e.Vocabulary)
-                .NotDueEntries()
+            var query = _entryQueries
+                .GetEntriesByOwnerIdQuery(userId)
+                .NotDueEntries();
+
+            var priorityEntriesQuery = query
                 .NotRepeatedTodayEntries()
                 .GetRandomEntries(take);
 
@@ -40,11 +40,7 @@ namespace Mnemo.Services.RepetitionService.Strategies
             {
                 var existingIds = priorityEntriesQuery.Select(e => e.Id).ToArray();
 
-                var randomEntries = _entryQueries
-                    .GetEntriesByVocabularyIdQuery(userId, vocabId)
-                    .Include(e => e.RepetitionState)
-                    .Include(e => e.Vocabulary)
-                    .NotDueEntries()
+                var randomEntries = query
                     .GetRandomEntries(take - existingIds.Length, existingIds);
 
                 mixQuery = mixQuery.Concat(randomEntries);

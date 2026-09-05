@@ -5,7 +5,7 @@
 namespace Mnemo.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddOriginVocabularies : Migration
+    public partial class AddIsActiveFlag : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -35,7 +35,7 @@ namespace Mnemo.Data.Migrations
                 oldNullable: true);
 
             migrationBuilder.AddColumn<bool>(
-                name: "IsOrigin",
+                name: "IsActive",
                 table: "Vocabularies",
                 type: "INTEGER",
                 nullable: false,
@@ -58,7 +58,7 @@ namespace Mnemo.Data.Migrations
                 table: "RepetitionTasks");
 
             migrationBuilder.DropColumn(
-                name: "IsOrigin",
+                name: "IsActive",
                 table: "Vocabularies");
 
             migrationBuilder.RenameColumn(

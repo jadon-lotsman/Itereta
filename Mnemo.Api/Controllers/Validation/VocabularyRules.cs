@@ -1,4 +1,6 @@
-﻿namespace Mnemo.Controllers.Validation
+﻿using Mnemo.Shared.Enums;
+
+namespace Mnemo.Controllers.Validation
 {
     public static class VocabularyRules
     {
@@ -26,10 +28,18 @@
             if (!trimmed.Any(char.IsLetter))
                 return false;
 
-            if (trimmed.Length < 3 || trimmed.Length > 45)
+            if (trimmed.Length < 3 || trimmed.Length > 200)
                 return false;
 
             return true;
+        }
+
+        public static bool IsValidVisibility(string? visibility)
+        {
+            if (string.IsNullOrWhiteSpace(visibility))
+                return false;
+
+            return Enum.TryParse<Visibility>(visibility, true, out _);
         }
     }
 }

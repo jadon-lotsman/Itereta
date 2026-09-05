@@ -100,14 +100,7 @@ namespace Mnemo.Services.RepetitionService
                 return RequestResult<List<RepetitionTask>>.Failure(ErrorCode.InvalidData);
             }
 
-            var originId = await _vocabularyQueries.GetOriginIdAsync(userId);
-            if (!originId.HasValue)
-            {
-                _logger.LogWarning("Origin vocabulary not found for user (UserId:{UserId})", userId);
-                return RequestResult<List<RepetitionTask>>.Failure(ErrorCode.UserNotFound);
-            }
-
-            var tasks = await strategy.GetTasksAsync(userId, originId.Value);
+            var tasks = await strategy.GetTasksAsync(userId);
             if (!tasks.Any())
             {
                 _logger.LogWarning("Repetition strategy returns an empty result for user (UserId:{UserId})", userId);

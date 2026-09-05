@@ -11,7 +11,7 @@ namespace Mnemo.Data.Entities
         public Visibility Visibility { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-        public bool IsOrigin { get; set; }
+        public bool IsActive { get; set; }
 
 
         public int OwnerId { get; set; }
@@ -25,7 +25,7 @@ namespace Mnemo.Data.Entities
             Visibility = Visibility.Private;
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = CreatedAt;
-            IsOrigin = false;
+            IsActive = true;
 
             Entries = new List<VocabularyEntry>();
         }

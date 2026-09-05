@@ -11,8 +11,8 @@ using Mnemo.Data;
 namespace Mnemo.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260903115212_AddOriginVocabularies")]
-    partial class AddOriginVocabularies
+    [Migration("20260905053255_AddIsActiveFlag")]
+    partial class AddIsActiveFlag
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -133,7 +133,7 @@ namespace Mnemo.Data.Migrations
                     b.Property<Guid>("Guid")
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("IsOrigin")
+                    b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")

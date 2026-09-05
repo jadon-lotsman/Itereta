@@ -16,6 +16,9 @@ namespace Mnemo.Data.Queries
 
 
         // Queries
+        public IQueryable<VocabularyEntry> GetEntriesByOwnerIdQuery(int ownerId)
+            => _context.VocabularyEntries.Where(e => e.Vocabulary.OwnerId == ownerId && e.Vocabulary.IsActive);
+
         public IQueryable<VocabularyEntry> GetEntriesByVocabularyIdQuery(int ownerId, int vocabId)
             => _context.VocabularyEntries.Where(e => e.Vocabulary.OwnerId == ownerId && e.Vocabulary.Id == vocabId);
 
@@ -24,11 +27,11 @@ namespace Mnemo.Data.Queries
 
 
         // Getters
+        public async Task<bool> HasAlternativePartOfSpeechAsync(int ownerId, string foreign, PartOfSpeech? partOfSpeech)
+            => await GetEntriesByOwnerIdQuery(ownerId).AnyAsync(e => e.Foreign == foreign && e.PartOfSpeech != partOfSpeech);
+
         public async Task<bool> ExistsByKeysAsync(int ownerId, int vocabId, string foreign, PartOfSpeech? partOfSpeech)
             => await GetEntriesByVocabularyIdQuery(ownerId, vocabId).AnyAsync(e => e.Foreign == foreign && e.PartOfSpeech == partOfSpeech);
-
-        public async Task<bool> HasAlternativePartOfSpeechAsync(int ownerId, int vocabId, string foreign, PartOfSpeech? partOfSpeech)
-            => await GetEntriesByVocabularyIdQuery(ownerId, vocabId).AnyAsync(e => e.Foreign == foreign && e.PartOfSpeech != partOfSpeech);
 
         public async Task<VocabularyEntry?> GetByIdAsync(int userId, int vocabId, int id)
             => await GetEntriesByVocabularyIdQuery(userId, vocabId).FirstOrDefaultAsync(e => e.Id == id);
