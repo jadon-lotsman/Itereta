@@ -1,9 +1,9 @@
 // Reset
 * {
-  margin: 0;
-  padding: 0;
-  border: 0;
   box-sizing: border-box;
+  margin: 0;
+  border: 0;
+  padding: 0;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
@@ -24,8 +24,8 @@ li {
 }
 
 body {
-  max-width: $layoutWidth;
   margin: 0 auto;
+  max-width: $layoutWidth;
   font-family: 'Inter', sans-serif;
 }
 
@@ -40,53 +40,77 @@ button {
 }
 
 ::selection {
-  color: #181818;
   background-color: $shadow;
+  color: $black-font;
 }
 
 // Basic
 .input {
-  color: $black-font;
-
-  border: $plane-gray 3px solid;
-  box-shadow: 5px 5px 0px $shadow;
-
   transition:
     transform 0.2s,
     box-shadow 0.2s ease;
 
+  box-shadow: 5px 5px 0px $shadow;
+  border: $plane-gray 3px solid;
   border-radius: 12px;
-  padding: 10px;
 
+  padding: 10px;
   width: 100%;
+
+  color: $black-font;
 
   font-size: 16px;
 
   &:focus {
-    box-shadow: 8px 8px 0px $shadow;
     transform: translateY(-3px);
+    box-shadow: 8px 8px 0px $shadow;
   }
 }
 
 button {
-  color: $black-font;
-  background-color: $plane-white;
-  box-shadow: 5px 5px 0px $shadow;
+  --shadow-color: #{$shadow};
 
-  font-size: 16px;
+  box-shadow: 5px 5px 0px var(--shadow-color);
+  border-radius: 12px;
+
+  background-color: $plane-white;
 
   padding: 10px;
-  border-radius: 12px;
+
+  color: $black-font;
+
+  font-size: 16px;
 
   &:disabled {
     cursor: default;
 
-    color: $gray-font;
     background-color: $plane-gray;
+    color: $gray-font;
   }
 
   &:active {
     color: $gray-font;
+  }
+}
+
+button.danger {
+  --shadow-color: #{$danger-shadow};
+
+  filter: drop-shadow(5px 5px 15px var(--shadow-color));
+  will-change: filter;
+
+  box-shadow: 5px 5px 0px var(--shadow-color);
+
+  background-color: $danger-body;
+  color: $danger-font;
+
+  &:disabled {
+    cursor: default;
+    color: $danger-shadow;
+  }
+
+  &:active {
+    color: $danger-shadow;
   }
 }
 
@@ -99,25 +123,26 @@ button {
 .small-button {
   @include lift();
 
-  height: 40px;
-  width: 40px;
-  min-height: 40px;
-  min-width: 40px;
-
   position: relative;
 
-  .iconize {
-    color: $shadow;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
 
+  .iconize {
     position: absolute;
+
     top: 8px;
     left: 8px;
+
+    color: $shadow;
   }
 }
 
 .part-of-speech {
   color: $gray-font;
 
-  text-transform: lowercase;
   font-weight: 300;
+  text-transform: lowercase;
 }

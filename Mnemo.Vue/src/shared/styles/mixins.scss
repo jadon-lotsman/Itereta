@@ -1,10 +1,10 @@
 @mixin iconize-text() {
-  user-select: none;
-
-  line-height: 1;
-  font-size: 24px;
-  font-family: 'Material Symbols Rounded';
   font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  font-family: 'Material Symbols Rounded';
+
+  user-select: none;
 }
 
 @mixin lift($distance: -2px, $shadow-offset: 2px) {
@@ -14,6 +14,6 @@
 
   &:hover {
     transform: translateY($distance);
-    box-shadow: ($shadow-offset + 5px) ($shadow-offset + 5px) 0px $shadow;
+    box-shadow: ($shadow-offset + 5px) ($shadow-offset + 5px) 0px var(--shadow-color);
   }
 }
