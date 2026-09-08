@@ -32,10 +32,10 @@ namespace Mnemo.Services.RepetitionService.Strategies
 
         public async Task<List<RepetitionTask>> GetTasksAsync(int userId)
         {
+            int take = _options.Value.RepetitionTaskCount;
             _logger.LogInformation("Starting generate {Count} tasks for user (UserId:{UserId})...", take, userId);
 
             var stopwatch = Stopwatch.StartNew();
-            int take = _options.Value.RepetitionTaskCount;
 
             var query 
                 = await GetTargetEntriesQuery(userId, take);
