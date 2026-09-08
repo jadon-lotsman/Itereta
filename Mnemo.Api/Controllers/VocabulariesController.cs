@@ -92,6 +92,25 @@ namespace Mnemo.Controllers
             return Ok(vocabResponse);
         }
 
+        [HttpPost("merge")]
+        public async Task<IActionResult> MergeVocabulary(Guid target, Guid source)
+        {
+            var result = await _vocabularyService.MergeVocabularyAsync(UserId, target, source);
+
+            if (!result.IsSuccess)
+            {
+                return result.ErrorCode switch
+                {
+                    ErrorCode.InvalidData => BadRequest(new { message = result.ErrorMessage }),
+                    ErrorCode.DuplicateEntry => NotFound(new { message = result.ErrorMessage }),
+                    _ => StatusCode(500, new { message = result.ErrorMessage })
+                };
+            }
+
+            var vocabResponse = _mapper.Map<VocabularyResponse>(result.Value);
+            return Ok(vocabResponse);
+        }
+
         [HttpDelete("{guid}/guid")]
         public async Task<IActionResult> RevokeVocabularyGuid(Guid guid)
         {

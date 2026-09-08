@@ -25,7 +25,7 @@ namespace Mnemo.Data.Queries
 
         // Getters
         public async Task<Vocabulary?> GetByGuidAsync(int ownerId, Guid guid)
-            => await GetVocabByGuidSecuredQuery(ownerId, guid).FirstOrDefaultAsync();
+            => await GetVocabByGuidSecuredQuery(ownerId, guid).Include(v => v.Entries).FirstOrDefaultAsync();
 
         public async Task<int?> GetIdByGuidAsync(int ownerId, Guid guid)
             => await GetVocabByGuidSecuredQuery(ownerId, guid).Select(v => v.Id).FirstOrDefaultAsync();

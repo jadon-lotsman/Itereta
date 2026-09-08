@@ -26,6 +26,7 @@ namespace Mnemo.Services.VocabularyService
         private readonly AccountQueries _accountQueries;
         private readonly VocabularyEntryQueries _entryQueries;
         private readonly VocabularyQueries _vocabularyQueries;
+        private readonly EntryManagementService _entryService;
 
 
 
@@ -39,7 +40,8 @@ namespace Mnemo.Services.VocabularyService
             AppDbContext context,
             AccountQueries accountQueries,
             VocabularyEntryQueries entryQueries,
-            VocabularyQueries vocabularyQueries)
+            VocabularyQueries vocabularyQueries,
+            EntryManagementService entryService)
         {
             _logger = logger;
             _createVocabularyValidator = createVocabularyValidator;
@@ -50,6 +52,7 @@ namespace Mnemo.Services.VocabularyService
             _accountQueries = accountQueries;
             _entryQueries = entryQueries;
             _vocabularyQueries = vocabularyQueries;
+            _entryService = entryService;
         }
 
 
@@ -171,7 +174,7 @@ namespace Mnemo.Services.VocabularyService
 
             var validationResults = await _createEntryValidator.ValidateBatchAsync(request.Entries, _logger);
 
-            if (validationResults.IsCriticalFailure)
+            if (validationResults.IsAllFailure)
             {
                 var messages = string.Join("; ", validationResults.FailedResults.Select(e => e.ErrorMessage));
                 return RequestResult<Vocabulary>.Failure(ErrorCode.InvalidData, string.Join("; ", messages));
@@ -198,11 +201,64 @@ namespace Mnemo.Services.VocabularyService
             vocab.Entries = entriesToAdd;
 
 
-            await _context.AddAsync(vocab);
+            await _context.Vocabularies.AddAsync(vocab);
             await _context.SaveChangesAsync();
             _logger.LogInformation("Successfully created vocabulary (Guid:{Guid}) for user (UserId:{UserId})!", vocab.Guid, userId);
 
             return RequestResult<Vocabulary>.Success(vocab);
+        }
+
+        public async Task<RequestResult<Vocabulary>> MergeVocabularyAsync(int userId, Guid targetGuid, Guid sourceGuid)
+        {
+            _logger.LogInformation("Starting merge vocabulary (TargetGuid:{TargetGuid}) with vocabulary (SourceGuid:{SourceGuid}) for user (UserId:{UserId})", targetGuid, sourceGuid, userId);
+
+            var sourceVocab = await _vocabularyQueries.GetByGuidAsync(userId, sourceGuid); // Returns value if user is owner or vocabulary isn't private
+            if (sourceVocab == null)
+            {
+                _logger.LogWarning("Source vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", sourceGuid, userId);
+                return RequestResult<Vocabulary>.Failure(ErrorCode.VocabularyNotFound);
+            }
+
+            var targetVocab = await _vocabularyQueries.GetByGuidAsync(userId, targetGuid);
+            if (targetVocab == null)
+            {
+                _logger.LogWarning("Target vocabulary (Guid:{Guid}) not found or access denied for user (UserId:{UserId})", targetGuid, userId);
+                return RequestResult<Vocabulary>.Failure(ErrorCode.VocabularyNotFound);
+            }
+
+
+            var filterResults = await _entryService.FilterVocabularyDuplicatesAsync(userId, targetVocab.Id, sourceVocab.Entries);
+
+            var messages = string.Join("; ", filterResults.FailedResults.Select(e => e.ErrorMessage));
+            var duplicationErrors = RequestResult<Vocabulary>.Failure(ErrorCode.DuplicateEntry, messages);
+
+            if (filterResults.IsAllFailure)
+                return duplicationErrors;
+
+
+            var sourcesToCopy = filterResults.SucceededResults.Select(r => r.Value!).ToList();
+            var entriesToAdd = new List<VocabularyEntry>();
+
+            foreach (var sourceEntry in sourcesToCopy)
+            {
+                var entry = VocabularyEntry.CreateFromDefinition(sourceEntry);
+
+                entry.VocabularyId = targetVocab.Id;
+                entry.MergedFromId = sourceVocab.Id;
+                entry.RepetitionState = new RepetitionState()
+                {
+                    EasinessFactor = _sm2.Value.InitEF,
+                    RepetitionInterval = _sm2.Value.MinInterval
+                };
+
+                entriesToAdd.Add(entry);
+            }
+
+            targetVocab.Entries.AddRange(entriesToAdd);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Successfully merged (TargetGuid:{TargetGuid}) with vocabulary (SourceGuid:{SourceGuid}) for user (UserId:{UserId})", targetGuid, sourceGuid, userId);
+
+            return RequestResult<Vocabulary>.Success(targetVocab);
         }
 
         public async Task<RequestResult<Vocabulary>> PatchVocabularyAsync(int userId, Guid guid, PatchVocabularyRequest request)

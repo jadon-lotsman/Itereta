@@ -21,12 +21,35 @@ namespace Mnemo.Data.Entities
 
         public VocabularyEntry()
         {
-            EnrichmentStatus = EnrichmentStatus.Pending;
-            LastEnrichmentAt = DateTime.UtcNow;
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = CreatedAt;
+            LastEnrichmentAt = CreatedAt;
+            EnrichmentStatus = EnrichmentStatus.Pending;
         }
 
+
+        public static VocabularyEntry CreateFromDefinition(VocabularyDefinition source)
+        {
+            return new VocabularyEntry
+            {
+                Foreign = source.Foreign,
+                Transcription = source.Transcription,
+                AudioUrl = source.AudioUrl,
+                PartOfSpeech = source.PartOfSpeech,
+                CEFR = source.CEFR,
+
+                Examples = new List<string>(source.Examples),
+                Translations = new List<string>(source.Translations),
+                Synonyms = new List<string>(source.Synonyms),
+                Antonyms = new List<string>(source.Antonyms),
+
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                LastEnrichmentAt = DateTime.UtcNow,
+                EnrichmentStatus = EnrichmentStatus.Pending,
+                RepetitionState = null
+            };
+        }
 
         public bool SetMeta(EnrichResponse enrich)
         {

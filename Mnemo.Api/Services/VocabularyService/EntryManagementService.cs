@@ -126,7 +126,7 @@ namespace Mnemo.Services.VocabularyService
             var messages = string.Join("; ", validationResults.FailedResults.Select(e => e.ErrorMessage));
             var validationErrors = BatchRequestResult<VocabularyEntry>.CriticalFailure(ErrorCode.InvalidData, messages);
 
-            if (validationResults.IsCriticalFailure)
+            if (validationResults.IsAllFailure)
                 return validationErrors;
 
 
@@ -135,9 +135,9 @@ namespace Mnemo.Services.VocabularyService
                 _mapper.Map<List<VocabularyEntry>>(succeedRequests)
                 .RemoveKeyDuplicates();
 
-            var filterResults = await FilterVocabularyDuplicatesAsync(userId, id.Value, entries);
+            var filterResults = await FilterVocabularyDuplicatesAsync(userId, id.Value, entries.ToList());
 
-            if (filterResults.IsCriticalFailure)
+            if (filterResults.IsAllFailure)
                 return filterResults;
 
 
@@ -164,14 +164,13 @@ namespace Mnemo.Services.VocabularyService
             return BatchRequestResult<VocabularyEntry>.Return(results);
         }
 
-        private async Task<BatchRequestResult<VocabularyEntry>> FilterVocabularyDuplicatesAsync(int userId, int vocabId, IEnumerable<VocabularyEntry> entries)
+        public async Task<BatchRequestResult<VocabularyEntry>> FilterVocabularyDuplicatesAsync(int userId, int vocabId, IReadOnlyCollection<VocabularyEntry> entries)
         {
-            var entryList = entries.ToList();
-            int total = entryList.Count;
+            int total = entries.Count;
 
             _logger.LogDebug("Starting duplicate filter for {Count} entries (UserId: {UserId}, VocabId: {VocabId})...", total, userId, vocabId);
 
-            var foreigns = entryList
+            var foreigns = entries
                 .Select(e => e.Foreign)
                 .Where(f => !string.IsNullOrWhiteSpace(f))
                 .Distinct()
