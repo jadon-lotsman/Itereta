@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Options;
 using Mnemo.Shared;
 using Mnemo.Shared.Enums;
-using Mnemo.Shared.Extensions;
 
 namespace Mnemo.Controllers.ActionResult
 {
@@ -35,15 +34,17 @@ namespace Mnemo.Controllers.ActionResult
             if (_result.IsSuccess)
             {
                 response.StatusCode = _successStatusCode;
-
-                if (_mapFunc != null)
+                if (!IsStatusCodeWithoutBody(_successStatusCode))
                 {
-                    var mappedValue = _mapFunc(_result.Value!);
-                    await response.WriteAsJsonAsync(mappedValue, jsonOptions.JsonSerializerOptions);
-                }
-                else
-                {
-                    await response.WriteAsJsonAsync(_result.Value, jsonOptions.JsonSerializerOptions);
+                    if (_mapFunc != null)
+                    {
+                        var mappedValue = _mapFunc(_result.Value!);
+                        await response.WriteAsJsonAsync(mappedValue, jsonOptions.JsonSerializerOptions);
+                    }
+                    else
+                    {
+                        await response.WriteAsJsonAsync(_result.Value, jsonOptions.JsonSerializerOptions);
+                    }
                 }
             }
             else
@@ -69,9 +70,17 @@ namespace Mnemo.Controllers.ActionResult
                     _ => StatusCodes.Status418ImATeapot
                 };
 
-                var errorResponse = new { errorCode = _result.ErrorCode, message = _result.ErrorMessage };
+                var errorResponse = new { message = _result.ErrorMessage };
                 await response.WriteAsJsonAsync(errorResponse, jsonOptions.JsonSerializerOptions);
             }
+        }
+
+        private static bool IsStatusCodeWithoutBody(int statusCode)
+        {
+            return statusCode is >= 100 and <= 199
+                or StatusCodes.Status204NoContent
+                or StatusCodes.Status205ResetContent
+                or StatusCodes.Status304NotModified;
         }
     }
 }
