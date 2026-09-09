@@ -2,26 +2,23 @@
 {
     public enum ErrorCode
     {
-        // 400 BadRequest
+        // BadRequest
         InvalidData,
         InvalidPassword,
 
-        // 403 Forbidden
-        AccessDenied,
-
-        // 404 NotFound
+        // NotFound
         UserNotFound,
         VocabularyNotFound,
         EntryNotFound,
         StateNotFound,
-        TaskNotFound,
         RepetitionNotFound,
+        TaskNotFound,
 
-        // 409 Conflict/Dublicate
+        // Conflict/Dublicate
         UsernameTaken,
         DuplicateEntry,
 
-        // 422 UnprocessableEntity
+        // UnprocessableEntity
         TaskGenerationFailed,
         ExternalDictionaryError,
     }
