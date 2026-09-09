@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Mnemo.Contracts.Vocabulary;
 using Mnemo.Contracts.Vocabulary.Requests;
+using Mnemo.Data.Entities;
 using Mnemo.Data.Queries;
 using Mnemo.Services.VocabularyService;
 using Mnemo.Shared.Enums;
+using Mnemo.Shared.Extensions;
 using System.Security.Claims;
 
 namespace Mnemo.Controllers
@@ -38,7 +40,6 @@ namespace Mnemo.Controllers
         public async Task<IActionResult> GetAllPublic()
         {
             var vocabs = await _vocabularyQueries.GetPublishedAsync();
-
             var vocabsResponse = _mapper.Map<List<VocabularyResponse>>(vocabs);
             return Ok(vocabsResponse);
         }
@@ -48,7 +49,6 @@ namespace Mnemo.Controllers
         {
             var isDescendingBoolean = isDescending == "true" ? true : false;
             var response = await _vocabularyService.GetVocabularySectorsAsync(UserId, guid, isDescendingBoolean);
-
             return Ok(response);
         }
 
@@ -56,7 +56,6 @@ namespace Mnemo.Controllers
         public async Task<IActionResult> GetVocabularyStatistics(Guid guid)
         {
             var response = await _vocabularyService.GetVocabularyStatisticsAsync(UserId, guid);
-
             return Ok(response);
         }
 
@@ -77,38 +76,14 @@ namespace Mnemo.Controllers
         public async Task<IActionResult> CreateVocabulary([FromBody] CreateVocabularyRequest request)
         {
             var result = await _vocabularyService.CreateVocabularyAsync(UserId, request);
-
-            if (!result.IsSuccess)
-            {
-                return result.ErrorCode switch
-                {
-                    ErrorCode.InvalidData => BadRequest(new { message = result.ErrorMessage }),
-                    ErrorCode.UserNotFound => NotFound(new { message = result.ErrorMessage }),
-                    _ => StatusCode(500, new { message = result.ErrorMessage })
-                };
-            }
-
-            var vocabResponse = _mapper.Map<VocabularyResponse>(result.Value);
-            return Ok(vocabResponse);
+            return result.ToActionResult<Vocabulary, VocabularyResponse>(_mapper, StatusCodes.Status201Created);
         }
 
         [HttpPost("merge")]
         public async Task<IActionResult> MergeVocabulary(Guid target, Guid source)
         {
             var result = await _vocabularyService.MergeVocabularyAsync(UserId, target, source);
-
-            if (!result.IsSuccess)
-            {
-                return result.ErrorCode switch
-                {
-                    ErrorCode.InvalidData => BadRequest(new { message = result.ErrorMessage }),
-                    ErrorCode.DuplicateEntry => NotFound(new { message = result.ErrorMessage }),
-                    _ => StatusCode(500, new { message = result.ErrorMessage })
-                };
-            }
-
-            var vocabResponse = _mapper.Map<VocabularyResponse>(result.Value);
-            return Ok(vocabResponse);
+            return result.ToActionResult<Vocabulary, VocabularyResponse>(_mapper);
         }
 
         [HttpDelete("{guid}/guid")]
@@ -132,17 +107,7 @@ namespace Mnemo.Controllers
         public async Task<IActionResult> DeleteVocabulary(Guid guid)
         {
             var result = await _vocabularyService.RemoveVocabularyByGuidAsync(UserId, guid);
-
-            if (!result.IsSuccess)
-            {
-                return result.ErrorCode switch
-                {
-                    ErrorCode.VocabularyNotFound => NotFound(new { message = result.ErrorMessage }),
-                    _ => StatusCode(500, new { message = result.ErrorMessage })
-                };
-            }
-
-            return NoContent();
+            return result.ToActionResult(StatusCodes.Status204NoContent);
         }
     }
 }

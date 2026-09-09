@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Mnemo.Contracts.Entry;
 using Mnemo.Contracts.Entry.Requests;
+using Mnemo.Data.Entities;
 using Mnemo.Data.Queries;
 using Mnemo.Services.VocabularyService;
 using Mnemo.Shared.Enums;
+using Mnemo.Shared.Extensions;
 using System.Security.Claims;
 
 namespace Mnemo.Controllers
@@ -53,7 +55,6 @@ namespace Mnemo.Controllers
         public async Task<IActionResult> GetVocabularyPage(Guid guid, string startWord, string endWord, [FromQuery] int page, int pageSize)
         {
             var response = await _entryService.GetVocabularyPageAsync(UserId, guid, startWord, endWord, page, pageSize);
-
             return Ok(response);
         }
 
@@ -61,59 +62,21 @@ namespace Mnemo.Controllers
         public async Task<IActionResult> CreateEntry(Guid guid, [FromBody] CreateEntryRequest request)
         {
             var result = await _entryService.CreateEntryAsync(UserId, guid, request);
-
-            if (!result.IsSuccess)
-            {
-                return result.ErrorCode switch
-                {
-                    ErrorCode.InvalidData => BadRequest(new { message = result.ErrorMessage }),
-                    ErrorCode.UserNotFound => NotFound(new { message = result.ErrorMessage }),
-                    ErrorCode.DuplicateEntry => Conflict(new { message = result.ErrorMessage }),
-                    _ => StatusCode(500, new { message = result.ErrorMessage })
-                };
-            }
-
-            var entry = result.Value;
-            var entryRespose = _mapper.Map<EntryResponse>(entry);
-            return Ok(entryRespose);
+            return result.ToActionResult<VocabularyEntry, EntryResponse>(_mapper, StatusCodes.Status201Created);
         }
 
         [HttpPatch("{id:int}")]
         public async Task<IActionResult> PatchEntry(Guid guid, int id, [FromBody] PatchEntryRequest request)
         {
             var result = await _entryService.PatchEntryAsync(UserId, guid, id, request);
-
-            if (!result.IsSuccess)
-            {
-                return result.ErrorCode switch
-                {
-                    ErrorCode.InvalidData => BadRequest(new { message = result.ErrorMessage }),
-                    ErrorCode.EntryNotFound => NotFound(new { message = result.ErrorMessage }),
-                    ErrorCode.DuplicateEntry => Conflict(new { message = result.ErrorMessage }),
-                    _ => StatusCode(500, new { message = result.ErrorMessage })
-                };
-            }
-
-            var entry = result.Value;
-            var entryRespose = _mapper.Map<EntryResponse>(entry);
-            return Ok(entryRespose);
+            return result.ToActionResult<VocabularyEntry, EntryResponse>(_mapper);
         }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteEntry(Guid guid, int id)
         {
             var result = await _entryService.RemoveEntryByIdAsync(UserId, guid, id);
-
-            if (!result.IsSuccess)
-            {
-                return result.ErrorCode switch
-                {
-                    ErrorCode.EntryNotFound => NotFound(new { message = result.ErrorMessage }),
-                    _ => StatusCode(500, new { message = result.ErrorMessage })
-                };
-            }
-
-            return NoContent();
+            return result.ToActionResult(StatusCodes.Status204NoContent);
         }
     }
 }

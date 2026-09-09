@@ -5,6 +5,7 @@ using Mnemo.Data.Entities;
 using Mnemo.Data.Queries;
 using Mnemo.Services.AccountService;
 using Mnemo.Shared.Enums;
+using Mnemo.Shared.Extensions;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -45,18 +46,7 @@ namespace Mnemo.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
         {
             var result = await _accountService.CreateAsync(request.Username);
-
-            if (!result.IsSuccess)
-            {
-                return result.ErrorCode switch
-                {
-                    ErrorCode.UsernameTaken => Conflict(new { message = result.ErrorMessage }),
-                    ErrorCode.InvalidPassword => BadRequest(new { message = result.ErrorMessage }),
-                    _ => StatusCode(500, new { message = result.ErrorMessage })
-                };
-            }
-
-            return Created();
+            return result.ToActionResult(StatusCodes.Status201Created);
         }
 
 
